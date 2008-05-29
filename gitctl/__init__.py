@@ -1,6 +1,6 @@
-from git_python import Git
 from ConfigParser import SafeConfigParser
 
+import subprocess
 import os
 
 class GitControl(object):
@@ -16,9 +16,17 @@ class GitControl(object):
        else:
            container = os.path.abspath(container)
 
+       if not os.path.isdir(container):
+           os.makedirs(container)
+
        for proj in projects:
            if not sections or proj['name'] in sections:
-               self.pull(proj, container)
+               cmd, cwd = self.cmd(proj, container)
+               retcode = subprocess.call(cmd, cwd=cwd)
+               if retcode < 0:
+                   # TODO: Error handling
+                   pass
+
  
    def parse_config(self, config):
        """Parses a configuration file for project configurations."""
@@ -47,26 +55,29 @@ class GitControl(object):
 
        return projects
 
-   def pull(self, project, container):
-       """XXX"""
+   def cmd(self, project, container):
+       """Returns a suitable (command, cwd) tuple to bring the given project
+       up-to-date.
+       """
+       command = None
+       cwd = None
+       project_path = os.path.join(container, project['name'])
+
        # Update from upstream
-       if os.path.exists(os.path.join(container, project['name'])):
-           git = Git(os.path.join(container, project['name']))
-           
+       if os.path.exists(project_path):
+           cwd = project_path
            if project['type'] == 'git':
-               git.fetch('origin', project['branch'])
+               command = ['git', 'fetch', 'origin', project['branch']]
            else:
-               git.svn('rebase')
+               command = ['git', 'svn', 'rebase']
        # Create a new repository
        else:
-           if not os.path.isdir(container):
-               os.makedirs(container)
-           git = Git(container)
-           
            if project['type'] == 'git':
-               git.clone(project['url'], project['name'])
+               command = ['git', 'clone', project['url'], project_path]
            else:
-               git.svn('clone', '-s', project['url'], project['name'])
+               command = ['git', 'svn', 'clone', '-s', project['url'], project_path]
+
+       return command, cwd
 
 
 def main():

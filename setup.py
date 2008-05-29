@@ -18,7 +18,6 @@ setup(name='gitctl',
       zip_safe=True,
       install_requires=[
         'setuptools',
-        'GitPython',
           # -*- Extra requirements: -*-
       ],
       entry_points="""
