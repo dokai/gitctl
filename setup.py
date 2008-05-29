@@ -1,11 +1,10 @@
 from setuptools import setup, find_packages
-import sys, os
 
-version = '0.0'
+version = '0.1'
 
 setup(name='gitctl',
       version=version,
-      description="Script to manage multiple Git repositories in a manne",
+      description="Script to manage multiple Git repositories in a manner similar to svn:externals.",
       long_description="""\
 """,
       classifiers=[], # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
@@ -18,9 +17,13 @@ setup(name='gitctl',
       include_package_data=True,
       zip_safe=True,
       install_requires=[
+        'setuptools',
+        'GitPython',
           # -*- Extra requirements: -*-
       ],
       entry_points="""
       # -*- Entry points: -*-
+      [console_scripts]
+      gitctl = gitctl:main
       """,
       )
