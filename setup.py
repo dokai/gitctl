@@ -19,7 +19,8 @@ setup(name='gitctl',
       install_requires=[
         'setuptools',
           # -*- Extra requirements: -*-
-      ],
+        ],
+      test_suite='gitctl.tests.test_suite',
       entry_points="""
       # -*- Entry points: -*-
       [console_scripts]
