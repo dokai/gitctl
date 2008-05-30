@@ -1,5 +1,7 @@
 .. contents::
 
+Git clone URL: git://github.com/dokai/gitctl.git
+
 Change history
 **************
 
