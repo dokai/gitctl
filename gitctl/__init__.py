@@ -1,6 +1,7 @@
 from ConfigParser import SafeConfigParser
 
 import subprocess
+import sys
 import os
 
 class GitControl(object):
@@ -21,11 +22,12 @@ class GitControl(object):
 
        for proj in projects:
            if not sections or proj['name'] in sections:
-               cmd, cwd = self.cmd(proj, container)
-               retcode = subprocess.call(cmd, cwd=cwd)
-               if retcode < 0:
-                   # TODO: Error handling
-                   pass
+               for cmd, cwd in self.cmd(proj, container):
+                   retcode = subprocess.call(cmd, cwd=cwd)
+                   if retcode < 0:
+                       print >> sys.stderr, 'Error running: %s' % ' '.join(cmd)
+                       if cwd is not None:
+                           print >> sys.stderr, 'Current directory: %s' % cwd
 
  
    def parse_config(self, config):
@@ -36,9 +38,8 @@ class GitControl(object):
 
        projects = []
        for sec in parser.sections():
-           for mandatory in ('url',):
-               if not parser.has_option(sec, mandatory):
-                   raise ValueError('Section %s is missing option %s' % (sec, mandatory))
+           if not parser.has_option(sec, 'url'):
+               raise ValueError('Section %s is missing the url option %s' % sec)
            
            proj = {
                'name' : sec.strip(),
@@ -56,28 +57,29 @@ class GitControl(object):
        return projects
 
    def cmd(self, project, container):
-       """Returns a suitable (command, cwd) tuple to bring the given project
-       up-to-date.
+       """Returns a sequence of suitable (command, cwd) tuples to bring the
+       given project up-to-date.
        """
-       command = None
-       cwd = None
+       commands = []
        project_path = os.path.join(container, project['name'])
 
        # Update from upstream
        if os.path.exists(project_path):
            cwd = project_path
            if project['type'] == 'git':
-               command = ['git', 'fetch', 'origin', project['branch']]
+               # Do we want to --rebase here instead of merging?
+               commands.append((['git', 'pull', 'origin'], project_path))
            else:
-               command = ['git', 'svn', 'rebase']
+               commands.append((['git', 'svn', 'rebase'], project_path))
        # Create a new repository
        else:
            if project['type'] == 'git':
-               command = ['git', 'clone', project['url'], project_path]
+               commands.append((['git', 'clone', '--no-checkout', project['url'], project_path], None))
+               commands.append((['git', 'checkout', project['branch']], project_path))
            else:
-               command = ['git', 'svn', 'clone', '-s', project['url'], project_path]
+               commands.append((['git', 'svn', 'clone', '-s', project['url'], project_path], None))
 
-       return command, cwd
+       return commands
 
 
 def main():
@@ -95,7 +97,9 @@ pulled.
     parser.add_option('-c', '--config', dest='config',
                       help='Configuration file. Defaults to: %default')
     parser.add_option('-d', '--dir', dest='container', metavar='DIR',
-                      help='Base directory where all the projects will be placed. Defaults to the same directory where the configuration file is located in.')
+                      help='Base directory where all the projects will be placed. '
+                           'Defaults to ./src relative to the location of the '
+                           'configuration file.')
 
     parser.set_defaults(config='externals.cfg')
     options, args = parser.parse_args()
