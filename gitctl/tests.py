@@ -120,7 +120,7 @@ class TestGitCommand(GitControlTestCase):
         commands = ctl.cmd(project, self.path)
 
         self.assertEquals(1, len(commands))
-        self.assertEquals(['git', 'pull', 'origin'], commands[0][0])
+        self.assertEquals(['git', 'pull', '--rebase', 'origin'], commands[0][0])
         self.assertEquals(project_path, commands[0][1])
 
     
