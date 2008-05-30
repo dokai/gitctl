@@ -9,7 +9,7 @@ version = '1.0a1'
 
 setup(name='gitctl',
       version=version,
-      description="Script to manage multiple Git repositories in a manner similar to svn:externals.",
+      description="Script to operate with multiple Git repositories in a manner similar to svn:externals.",
       long_description=read('README.txt'),
       classifiers=[
         'Development Status :: 3 - Alpha',
