@@ -67,8 +67,7 @@ class GitControl(object):
        if os.path.exists(project_path):
            cwd = project_path
            if project['type'] == 'git':
-               # Do we want to --rebase here instead of merging?
-               commands.append((['git', 'pull', 'origin'], project_path))
+               commands.append((['git', 'pull', '--rebase', 'origin'], project_path))
            else:
                commands.append((['git', 'svn', 'rebase'], project_path))
        # Create a new repository
