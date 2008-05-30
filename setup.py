@@ -1,12 +1,16 @@
 from setuptools import setup, find_packages
 
+import os.path
+
+def read(*rnames):
+    return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
+
 version = '1.0a1'
 
 setup(name='gitctl',
       version=version,
       description="Script to manage multiple Git repositories in a manner similar to svn:externals.",
-      long_description="""\
-""",
+      long_description=read('README.txt'),
       classifiers=[
         'Development Status :: 3 - Alpha',
         'Environment :: Console',

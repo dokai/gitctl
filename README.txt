@@ -21,7 +21,8 @@ The ``svn:externals`` property allows one part of a Subversion
 repository to depend on other parts (or other repositories) so that
 when checked out the dependent parts will be checked out also. Also,
 updating the main checkout will update all the dependent checkouts
-also.
+also. Externals are often used to put together a composite application
+which consists of multiple independent parts.
 
 The package provides a single script -- ``gitctl`` -- which reads in a
 configuration file and performs the appropriate clone / pull
@@ -30,15 +31,17 @@ clones the remote repository and checks out the chosen branch in the
 working directory. Subsequent script calls will pull in (with
 --rebase) changes from the remote repository.
 
-Also remote Subversion repositories are support which will be cloned
-and updated using ``git-svn``.
+Also remote Subversion repositories are supported which will be cloned
+and updated using ``git-svn``. This is useful if you're composite
+project consists of components that are hosted on Subversion
+repositories not under your immediate control.
 
 
 Configuration file
 ******************
 
-The configuration file a simple INI-style text file which contains a
-section per remote repository. Supported options are:
+The configuration file is a simple INI-style text file which contains
+a section per remote repository. Supported options are:
 
 ``url`` (mandatory)
 
