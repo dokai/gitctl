@@ -5,7 +5,7 @@ Git clone URL: git://github.com/dokai/gitctl.git
 Change history
 **************
 
-1.0a1 (2008-05-30)
+1.0a1 (xxxx-xx-xx)
 ==================
 
  - Initial public release [dokai]
