@@ -5,81 +5,86 @@ import sys
 import os
 
 class GitControl(object):
-   """Helper class to facilite cloning/updating multiple git/git-svn
-   repositories.
-   """
+    """Helper class to facilitate cloning/updating multiple git/git-svn
+    repositories.
+    """
 
-   def __call__(self, config, container=None, *sections):
-       projects = self.parse_config(config)
+    def __call__(self, config, default_container=None, *sections):
+        projects = self.parse_config(config)
+        
+        config_location = os.path.dirname(os.path.abspath(config))
+        if default_container is None:
+            default_container = os.path.join(config_location, 'src')
+        else:
+            default_container = os.path.abspath(default_container)
+            
+        for proj in projects:
+            if not sections or proj['name'] in sections:
+                # Allow the container to be overridden per project
+                container = os.path.join(config_location, proj.get('container', default_container))
+                if not os.path.isdir(container):
+                    os.makedirs(container)
 
-       if container is None:
-           container = os.path.join(os.path.dirname(os.path.abspath(config)), 'src')
-       else:
-           container = os.path.abspath(container)
-
-       if not os.path.isdir(container):
-           os.makedirs(container)
-
-       for proj in projects:
-           if not sections or proj['name'] in sections:
-               for cmd, cwd in self.cmd(proj, container):
+                for cmd, cwd in self.cmd(proj, container):
                    retcode = subprocess.call(cmd, cwd=cwd)
                    if retcode < 0:
                        print >> sys.stderr, 'Error running: %s' % ' '.join(cmd)
                        if cwd is not None:
                            print >> sys.stderr, 'Current directory: %s' % cwd
-
  
-   def parse_config(self, config):
-       """Parses a configuration file for project configurations."""
-       parser = SafeConfigParser({'type' : 'git', 'branch' : 'master'})
-       if len(parser.read(config)) == 0:
-           raise ValueError('Invalid config file: %s' % config)
+    def parse_config(self, config):
+        """Parses a configuration file for project configurations."""
+        parser = SafeConfigParser({'type' : 'git', 'branch' : 'master'})
+        if len(parser.read(config)) == 0:
+            raise ValueError('Invalid config file: %s' % config)
 
-       projects = []
-       for sec in parser.sections():
-           if not parser.has_option(sec, 'url'):
-               raise ValueError('Section %s is missing the url option %s' % sec)
+        projects = []
+        for sec in parser.sections():
+            if not parser.has_option(sec, 'url'):
+                raise ValueError('Section %s is missing the url option %s' % sec)
            
-           proj = {
+            proj = {
                'name' : sec.strip(),
                'url' : parser.get(sec, 'url').strip(),
                'type' : parser.get(sec, 'type').strip() }
+            
+            if parser.has_option(sec, 'dir'):
+                proj['container'] = parser.get(sec, 'dir').strip()
 
-           if proj['type'] not in ('git', 'git-svn'):
-               raise ValueError('Invalid type: %s. Supported types are "git" and "git-svn".' % proj['type'])
+            if proj['type'] not in ('git', 'git-svn'):
+                raise ValueError('Invalid type: %s. Supported types are "git" and "git-svn".' % proj['type'])
 
-           if proj['type'] == 'git':
-               proj['branch'] = parser.get(sec, 'branch').strip()
+            if proj['type'] == 'git':
+                proj['branch'] = parser.get(sec, 'branch').strip()
 
-           projects.append(proj)
+            projects.append(proj)
 
-       return projects
+        return projects
 
-   def cmd(self, project, container):
-       """Returns a sequence of suitable (command, cwd) tuples to bring the
-       given project up-to-date.
-       """
-       commands = []
-       project_path = os.path.join(container, project['name'])
+    def cmd(self, project, container):
+        """Returns a sequence of suitable (command, cwd) tuples to bring the
+        given project up-to-date.
+        """
+        commands = []
+        project_path = os.path.join(container, project['name'])
 
-       # Update from upstream
-       if os.path.exists(project_path):
-           cwd = project_path
-           if project['type'] == 'git':
-               commands.append((['git', 'pull', '--rebase', 'origin'], project_path))
-           else:
-               commands.append((['git', 'svn', 'rebase'], project_path))
-       # Create a new repository
-       else:
-           if project['type'] == 'git':
-               commands.append((['git', 'clone', '--no-checkout', project['url'], project_path], None))
-               commands.append((['git', 'checkout', project['branch']], project_path))
-           else:
-               commands.append((['git', 'svn', 'clone', '-s', project['url'], project_path], None))
-               commands.append((['git', 'repack', '-d'], project_path))
+        # Update from upstream
+        if os.path.exists(project_path):
+            cwd = project_path
+            if project['type'] == 'git':
+                commands.append((['git', 'pull', '--rebase', 'origin'], project_path))
+            else:
+                commands.append((['git', 'svn', 'rebase'], project_path))
+        # Create a new repository
+        else:
+            if project['type'] == 'git':
+                commands.append((['git', 'clone', '--no-checkout', project['url'], project_path], None))
+                commands.append((['git', 'checkout', project['branch']], project_path))
+            else:
+                commands.append((['git', 'svn', 'clone', '-s', project['url'], project_path], None))
+                commands.append((['git', 'repack', '-d'], project_path))
 
-       return commands
+        return commands
 
 
 def main():

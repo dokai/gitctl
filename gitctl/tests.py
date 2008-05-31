@@ -26,6 +26,7 @@ class TestConfigParser(GitControlTestCase):
 type = git
 url = git@github.com:dokai/my-project.git
 branch = insane-refactoring
+dir = projects
 """)
         projects = ctl.parse_config(config)
 
@@ -34,6 +35,7 @@ branch = insane-refactoring
         self.assertEquals('git', projects[0]['type'])
         self.assertEquals('git@github.com:dokai/my-project.git', projects[0]['url'])
         self.assertEquals('insane-refactoring', projects[0]['branch'])
+        self.assertEquals('projects', projects[0]['container'])
 
     def test_git_project_defaults(self):
         ctl = gitctl.GitControl()
@@ -48,6 +50,7 @@ url = git@github.com:dokai/my-project.git
         self.assertEquals('git', projects[0]['type'])
         self.assertEquals('git@github.com:dokai/my-project.git', projects[0]['url'])
         self.assertEquals('master', projects[0]['branch'])
+        self.failIf('container' in projects[0])
 
     def test_gitsvn_project(self):
         ctl = gitctl.GitControl()
@@ -62,7 +65,8 @@ type = git-svn
         self.assertEquals('other.project', projects[0]['name'])
         self.assertEquals('git-svn', projects[0]['type'])
         self.assertEquals('https://svn.server.com/svn/other.project', projects[0]['url'])
-        self.failIf(projects[0].has_key('branch'))
+        self.failIf('branch' in projects[0])
+        self.failIf('container' in projects[0])
 
     def test_multiple_projects(self):
         ctl = gitctl.GitControl()
