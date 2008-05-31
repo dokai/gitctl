@@ -77,6 +77,7 @@ class GitControl(object):
                commands.append((['git', 'checkout', project['branch']], project_path))
            else:
                commands.append((['git', 'svn', 'clone', '-s', project['url'], project_path], None))
+               commands.append((['git', 'repack', '-d'], project_path))
 
        return commands
 
