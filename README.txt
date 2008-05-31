@@ -63,6 +63,18 @@ a section per remote repository. Supported options are:
     cloning the remote repository. Only applies to Git
     repositories. Defaults to ``master``.
 
+``dir`` (optional)
+
+    The name of the directory where the project will be checked out
+    into. An additional directory will be created under this one where
+    the project files will be located so it is safe to use the same
+    value for multiple projects. Relative paths are considered
+    relative to the location of the config file. Note: if you want to
+    check out all your projects under a single directory you can do so
+    by using the ``--dir`` switch without having to specify the path
+    in each section. This option will override the ``--dir`` switch
+    value.
+
 The name of the configuration section will be used to name the working
 directory. An example configuration file containing two repositories
 follows::
@@ -73,6 +85,7 @@ follows::
     [other.project]
     url = https://svn.server.com/svn/other.project
     type = svn
+    dir = some/path
 
 This will clone the two projects in two directories: ``my.project``
 and ``other.project``.
@@ -95,9 +108,10 @@ The ``gitctl`` script provides a few options::
     -h, --help            show this help message and exit
     -c CONFIG, --config=CONFIG
                           Configuration file. Defaults to: externals.cfg
-    -d DIR, --dir=DIR     Base directory where all the projects will be placed.
-                          Defaults to ./src relative to the location of the
-                          configuration file.
+    -d DIR, --dir=DIR     Default base directory where all the projects will be
+                          placed. This can be overridden on a per-project basis
+                          in the config file. Defaults to ./src relative to the
+                          location of the given configuration file.
 
 Without any arguments the ``gitctl`` attempts to read a
 ``externals.cfg`` configuration file from the current directory and

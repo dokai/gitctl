@@ -102,8 +102,9 @@ pulled.
     parser.add_option('-c', '--config', dest='config',
                       help='Configuration file. Defaults to: %default')
     parser.add_option('-d', '--dir', dest='container', metavar='DIR',
-                      help='Base directory where all the projects will be placed. '
-                           'Defaults to ./src relative to the location of the '
+                      help='Default base directory where all the projects will be placed. '
+                           'This can be overridden on a per-project basis in the config file. '
+                           'Defaults to ./src relative to the location of the given '
                            'configuration file.')
 
     parser.set_defaults(config='externals.cfg')
