@@ -25,7 +25,7 @@ class TestConfigParser(GitControlTestCase):
 [my.project]
 type = git
 url = git@github.com:dokai/my-project.git
-branch = insane-refactoring
+treeish = insane-refactoring
 dir = projects
 """)
         projects = ctl.parse_config(config)
@@ -34,7 +34,7 @@ dir = projects
         self.assertEquals('my.project', projects[0]['name'])
         self.assertEquals('git', projects[0]['type'])
         self.assertEquals('git@github.com:dokai/my-project.git', projects[0]['url'])
-        self.assertEquals('insane-refactoring', projects[0]['branch'])
+        self.assertEquals('insane-refactoring', projects[0]['treeish'])
         self.assertEquals('projects', projects[0]['container'])
 
     def test_git_project_defaults(self):
@@ -49,7 +49,7 @@ url = git@github.com:dokai/my-project.git
         self.assertEquals('my.project', projects[0]['name'])
         self.assertEquals('git', projects[0]['type'])
         self.assertEquals('git@github.com:dokai/my-project.git', projects[0]['url'])
-        self.assertEquals('master', projects[0]['branch'])
+        self.assertEquals('master', projects[0]['treeish'])
         self.failIf('container' in projects[0])
 
     def test_gitsvn_project(self):
@@ -65,7 +65,7 @@ type = git-svn
         self.assertEquals('other.project', projects[0]['name'])
         self.assertEquals('git-svn', projects[0]['type'])
         self.assertEquals('https://svn.server.com/svn/other.project', projects[0]['url'])
-        self.failIf('branch' in projects[0])
+        self.failIf('treeish' in projects[0])
         self.failIf('container' in projects[0])
 
     def test_multiple_projects(self):
@@ -95,7 +95,7 @@ class TestGitCommand(GitControlTestCase):
         project = {
             'name' : 'my.project',
             'url' : 'git@github.com:dokai/my-project.git',
-            'branch' : 'master',
+            'treeish' : 'master',
             'type' : 'git',
             }
         project_path = os.path.join(self.path, 'my.project')
@@ -106,7 +106,7 @@ class TestGitCommand(GitControlTestCase):
                           commands[0][0])
         self.failUnless(commands[0][1] is None)
 
-        self.assertEquals(['git', 'checkout', project['branch']], commands[1][0])
+        self.assertEquals(['git', 'checkout', project['treeish']], commands[1][0])
         self.assertEquals(project_path, commands[1][1])
 
     def test_git_pull(self):
@@ -116,7 +116,7 @@ class TestGitCommand(GitControlTestCase):
         project = {
             'name' : 'my.project',
             'url' : 'git@github.com:dokai/my-project.git',
-            'branch' : 'master',
+            'treeish' : 'master',
             'type' : 'git',
             }
 

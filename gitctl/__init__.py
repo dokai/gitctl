@@ -34,7 +34,7 @@ class GitControl(object):
  
     def parse_config(self, config):
         """Parses a configuration file for project configurations."""
-        parser = SafeConfigParser({'type' : 'git', 'branch' : 'master'})
+        parser = SafeConfigParser({'type' : 'git', 'treeish' : 'master'})
         if len(parser.read(config)) == 0:
             raise ValueError('Invalid config file: %s' % config)
 
@@ -55,7 +55,7 @@ class GitControl(object):
                 raise ValueError('Invalid type: %s. Supported types are "git" and "git-svn".' % proj['type'])
 
             if proj['type'] == 'git':
-                proj['branch'] = parser.get(sec, 'branch').strip()
+                proj['treeish'] = parser.get(sec, 'treeish').strip()
 
             projects.append(proj)
 
@@ -79,7 +79,7 @@ class GitControl(object):
         else:
             if project['type'] == 'git':
                 commands.append((['git', 'clone', '--no-checkout', project['url'], project_path], None))
-                commands.append((['git', 'checkout', project['branch']], project_path))
+                commands.append((['git', 'checkout', project['treeish']], project_path))
             else:
                 commands.append((['git', 'svn', 'clone', '-s', project['url'], project_path], None))
                 commands.append((['git', 'repack', '-d'], project_path))

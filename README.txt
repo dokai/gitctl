@@ -57,11 +57,12 @@ a section per remote repository. Supported options are:
     The type of the remote repository. Valid values are ``git`` and
     ``svn``. Defaults to ``git``.
 
-``branch`` (optional)
+``treeish`` (optional)
 
-    The name of the branch that is checked out by default when first
-    cloning the remote repository. Only applies to Git
-    repositories. Defaults to ``master``.
+    The name of a "treeish" object that is checked out by default when
+    first cloning the remote repository. Only applies to Git
+    repositories. A treeish object may refer, for example, to a branch
+    or a tag. Defaults to ``master``.
 
 ``dir`` (optional)
 
