@@ -15,7 +15,7 @@ class GitControlTestCase(unittest.TestCase):
 class TestConfigParser(GitControlTestCase):
     
     def config(self, data):
-        filename = os.path.join(self.path, 'externals.cfg')
+        filename = os.path.join(self.path, 'gitexternals.cfg')
         open(filename, 'w').write(data)
         return filename
 

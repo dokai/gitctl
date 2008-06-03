@@ -107,7 +107,7 @@ pulled.
                            'Defaults to ./src relative to the location of the given '
                            'configuration file.')
 
-    parser.set_defaults(config='externals.cfg')
+    parser.set_defaults(config='gitexternals.cfg')
     options, args = parser.parse_args()
     
     ctl = GitControl()

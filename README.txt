@@ -108,14 +108,14 @@ The ``gitctl`` script provides a few options::
   options:
     -h, --help            show this help message and exit
     -c CONFIG, --config=CONFIG
-                          Configuration file. Defaults to: externals.cfg
+                          Configuration file. Defaults to: gitexternals.cfg
     -d DIR, --dir=DIR     Default base directory where all the projects will be
                           placed. This can be overridden on a per-project basis
                           in the config file. Defaults to ./src relative to the
                           location of the given configuration file.
 
 Without any arguments the ``gitctl`` attempts to read a
-``externals.cfg`` configuration file from the current directory and
+``gitexternals.cfg`` configuration file from the current directory and
 will clone / pull all the configured projects under ``$PWD/src``.
 
 
