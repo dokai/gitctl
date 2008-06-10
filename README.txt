@@ -49,8 +49,9 @@ a section per remote repository. Supported options are:
 
     Full URL to the remote repository. For Subversion repositories you
     should give the URL to the directory that contains the standard
-    ``trunk/tags/branches`` structure, which is currently the only
-    supported repository layout.
+    ``trunk/tags/branches`` structure. For non-standard layouts or
+    single branch checkouts see the Subversion specific options
+    ``svn-*`` below.
 
 ``type`` (optional)
 
@@ -75,6 +76,24 @@ a section per remote repository. Supported options are:
     by using the ``--dir`` switch without having to specify the path
     in each section. This option will override the ``--dir`` switch
     value.
+
+For Subversion repositories you can optionally use the following
+options to define a non-standard repository layout. Omitting these
+options will assume the de-facto standard ``tags / branches / trunk``
+layout.
+
+``svn-trunk`` (optional)
+
+    Either a relative or absolute repository path to the trunk.
+
+``svn-tags`` (optional)
+
+    Either a relative or absolute repository path to the tags.
+
+``svn-branches`` (optional)
+
+    Either a relative or absolute repository path to the branches.
+
 
 The name of the configuration section will be used to name the working
 directory. An example configuration file containing two repositories

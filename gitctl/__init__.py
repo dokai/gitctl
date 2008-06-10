@@ -57,6 +57,10 @@ class GitControl(object):
 
             if proj['type'] == 'git':
                 proj['treeish'] = parser.get(sec, 'treeish').strip()
+            elif proj['type'] == 'git-svn':
+                for opt in 'svn-trunk', 'svn-tags', 'svn-branches':
+                    if parser.has_option(sec, opt):
+                        proj[opt] = parser.get(sec, opt).strip()
 
             projects.append(proj)
 
@@ -82,7 +86,22 @@ class GitControl(object):
                 commands.append((['git', 'clone', '--no-checkout', project['url'], project_path], None))
                 commands.append((['git', 'checkout', project['treeish']], project_path))
             else:
-                commands.append((['git', 'svn', 'clone', '-s', project['url'], project_path], None))
+                _cmd = ['git', 'svn', 'clone']
+
+                if 'svn-trunk' in project:
+                    _cmd.extend(['-T', project['svn-trunk']])
+                if 'svn-tags' in project:
+                    _cmd.extend(['-t', project['svn-tags']])
+                if 'svn-branches' in project:
+                    _cmd.extend(['-b', project['svn-branches']])
+
+                if len(_cmd) == 3:
+                    # Use the standard Subversion layout
+                    _cmd.append('-s')
+
+                _cmd.extend([project['url'], project_path])
+
+                commands.append((_cmd, None))
                 commands.append((['git', 'repack', '-d'], project_path))
 
         return commands
