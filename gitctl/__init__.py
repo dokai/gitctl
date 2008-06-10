@@ -20,6 +20,7 @@ class GitControl(object):
             
         for proj in projects:
             if not sections or proj['name'] in sections:
+                print 'Processing %s (%s)' % (proj['name'], proj['url'])
                 # Allow the container to be overridden per project
                 container = os.path.join(config_location, proj.get('container', default_container))
                 if not os.path.isdir(container):
