@@ -2,10 +2,12 @@
 
 Git clone URL: git://github.com/dokai/gitctl.git
 
+Project page: http://github.com/dokai/gitctl
+
 Change history
 **************
 
-1.0a1 (xxxx-xx-xx)
+1.0b1 (2008-06-12)
 ==================
 
  - Initial public release [dokai]
@@ -15,7 +17,7 @@ Purpose
 *******
 
 The purpose of this package is to facilitate a workflow similar to a
-one that can be achieved using the ``svn:externals`` property in
+one that can be achieved using the `svn:externals`_ property in
 Subversion when using Git to manage the source code of multiple
 projects.
 
@@ -36,8 +38,9 @@ working directory. Subsequent script calls will pull in (with
 Also remote Subversion repositories are supported which will be cloned
 and updated using ``git-svn``. This is useful if your composite
 project consists of components that are hosted on Subversion
-repositories not under your immediate control.
+repositories.
 
+.. _`svn:externals`: http://svnbook.red-bean.com/en/1.4/svn.advanced.externals.html
 
 Configuration file
 ******************
@@ -79,8 +82,7 @@ a section per remote repository. Supported options are:
 
 For Subversion repositories you can optionally use the following
 options to define a non-standard repository layout. Omitting these
-options will assume the de-facto standard ``tags / branches / trunk``
-layout.
+options will assume standard ``tags / branches / trunk`` layout.
 
 ``svn-trunk`` (optional)
 
@@ -94,21 +96,26 @@ layout.
 
     Either a relative or absolute repository path to the branches.
 
+``svn-clone-options`` (optional)
+
+    Additional options that will be passed verbatim to the ``git-svn``
+    command. This may be used, for example, to set the Subversion
+    username with ``--username=USER``.
 
 The name of the configuration section will be used to name the working
 directory. An example configuration file containing two repositories
 follows::
 
-    [my.project]
-    url = git@github.com:someuser/my-project.git
+    [gitctl]
+    url = git@github.com:dokai/gitctl.git
 
     [other.project]
     url = https://svn.server.com/svn/other.project
     type = svn
     dir = some/path
 
-This will clone the two projects in two directories: ``my.project``
-and ``other.project``.
+This will clone the two projects in two directories: ``./src/gitctl``
+and ``./some/path/other.project``.
 
 
 ``gitctl`` script
@@ -135,7 +142,7 @@ The ``gitctl`` script provides a few options::
 
 Without any arguments the ``gitctl`` attempts to read a
 ``gitexternals.cfg`` configuration file from the current directory and
-will clone / pull all the configured projects under ``$PWD/src``.
+will clone / pull all the configured projects in ``$PWD/src``.
 
 
 Workflow
@@ -158,4 +165,4 @@ script to pull all (or any given ones).
 Contributors
 ************
 
- - Kai Lautaportti [dokai]
+ - Kai Lautaportti, Author [dokai]

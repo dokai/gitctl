@@ -93,6 +93,26 @@ svn-branches = project/branches
         self.failIf('treeish' in projects[0])
         self.failIf('container' in projects[0])
 
+    def test_gitsvn_clone_options(self):
+        ctl = gitctl.GitControl()
+        config = self.config("""\
+[other.project]
+url = https://svn.server.com/svn/other.project
+type = git-svn
+svn-clone-options =
+    --username=dokai
+    --no-metadata
+    --prefix=foobar
+""")
+        projects = ctl.parse_config(config)
+
+        self.assertEquals(1, len(projects))
+        self.assertEquals('other.project', projects[0]['name'])
+        self.assertEquals(['--username=dokai', '--no-metadata', '--prefix=foobar'],
+                          projects[0]['svn-clone-options'])
+
+
+
     def test_gitsvn_project_trunk_only(self):
         ctl = gitctl.GitControl()
         config = self.config("""\

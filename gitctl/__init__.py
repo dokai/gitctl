@@ -61,6 +61,8 @@ class GitControl(object):
                 for opt in 'svn-trunk', 'svn-tags', 'svn-branches':
                     if parser.has_option(sec, opt):
                         proj[opt] = parser.get(sec, opt).strip()
+                if parser.has_option(sec, 'svn-clone-options'):
+                    proj['svn-clone-options'] = parser.get(sec, 'svn-clone-options').split()
 
             projects.append(proj)
 
@@ -99,6 +101,7 @@ class GitControl(object):
                     # Use the standard Subversion layout
                     _cmd.append('-s')
 
+                _cmd.extend(project.get('svn-clone-options', []))
                 _cmd.extend([project['url'], project_path])
 
                 commands.append((_cmd, None))

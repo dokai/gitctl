@@ -5,14 +5,14 @@ import os.path
 def read(*rnames):
     return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
 
-version = '1.0a1'
+version = '1.0b1'
 
 setup(name='gitctl',
       version=version,
       description="Script to operate with multiple Git repositories in a manner similar to svn:externals.",
       long_description=read('README.txt'),
       classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Environment :: Console',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
@@ -25,7 +25,7 @@ setup(name='gitctl',
       author_email='kai.lautaportti@hexagonit.fi',
       url='http://github.com/dokai/gitctl',
       license='BSD',
-      packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
+      packages=find_packages(exclude=['ez_setup', 'tests']),
       include_package_data=True,
       zip_safe=True,
       install_requires=[
