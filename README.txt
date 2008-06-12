@@ -168,6 +168,12 @@ Using setuptools::
 
   $ easy_install gitctl
 
+Dependencies
+************
+
+ * Git_ (>= 1.5.5)
+
+.. _Git: http://git-scm.org/
 
 Contributors
 ************
