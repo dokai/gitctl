@@ -161,6 +161,13 @@ After this you can either manage each project manually, pushing and
 pulling as you see fit or if you want you can use the ``gitctl``
 script to pull all (or any given ones).
 
+Installation
+************
+
+Using setuptools::
+
+  $ easy_install gitctl
+
 
 Contributors
 ************
