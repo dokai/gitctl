@@ -17,6 +17,8 @@ class GitControl(object):
             default_container = os.path.join(config_location, 'src')
         else:
             default_container = os.path.abspath(default_container)
+
+        problematic = []
             
         for proj in projects:
             if not sections or proj['name'] in sections:
@@ -28,11 +30,21 @@ class GitControl(object):
 
                 for cmd, cwd in self.cmd(proj, container):
                    retcode = subprocess.call(cmd, cwd=cwd)
-                   if retcode < 0:
+                   if retcode != 0:
                        print >> sys.stderr, 'Error running: %s' % ' '.join(cmd)
                        if cwd is not None:
                            print >> sys.stderr, 'Current directory: %s' % cwd
- 
+
+                       problematic.append((proj, cmd, cwd))
+        
+        if len(problematic) > 0:
+            print
+            print 'The following projects had problems:'
+            print '\n'.join(' * %s' % p[0]['name'] for p in problematic)
+            print
+            print 'Make sure that the projects do not have any uncommitted changes'
+            print 'in their working directories by either committing or stashing them.'
+
     def parse_config(self, config):
         """Parses a configuration file for project configurations."""
         parser = SafeConfigParser({'type' : 'git', 'treeish' : 'master'})
