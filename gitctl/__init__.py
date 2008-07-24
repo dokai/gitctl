@@ -9,22 +9,25 @@ class GitControl(object):
     repositories.
     """
 
-    def __call__(self, config, default_container=None, *sections):
-        projects = self.parse_config(config)
-        
-        config_location = os.path.dirname(os.path.abspath(config))
+    def __init__(self, config):
+        """Constructor"""
+        self.projects = self.parse_config(config)
+        self.config_location = os.path.dirname(os.path.abspath(config))
+
+    def update(self, default_container=None, *sections):
         if default_container is None:
-            default_container = os.path.join(config_location, 'src')
+            default_container = os.path.join(self.config_location, 'src')
         else:
             default_container = os.path.abspath(default_container)
 
         problematic = []
             
-        for proj in projects:
+        for proj in self.projects:
             if not sections or proj['name'] in sections:
                 print 'Processing %s (%s)' % (proj['name'], proj['url'])
                 # Allow the container to be overridden per project
-                container = os.path.join(config_location, proj.get('container', default_container))
+                container = os.path.join(self.config_location,
+                                         proj.get('container', default_container))
                 if not os.path.isdir(container):
                     os.makedirs(container)
 
@@ -145,8 +148,8 @@ pulled.
     parser.set_defaults(config='gitexternals.cfg')
     options, args = parser.parse_args()
     
-    ctl = GitControl()
-    ctl(options.config, options.container, *args)
+    ctl = GitControl(options.config)
+    ctl.update(options.container, *args)
 
 
 if __name__ == '__main__':
