@@ -14,6 +14,28 @@ class GitControl(object):
         self.projects = self.parse_config(config)
         self.config_location = os.path.dirname(os.path.abspath(config))
 
+    def check_svn(self, default_container, *sections):
+        if default_container is None:
+            default_container = os.path.join(self.config_location, 'src')
+        else:
+            default_container = os.path.abspath(default_container)
+            
+        for proj in self.projects:
+            if proj['type'] == 'git-svn' and (not sections or proj['name'] in sections):
+                # Allow the container to be overridden per project
+                container = os.path.join(self.config_location,
+                                         proj.get('container', default_container))
+                if not os.path.isdir(container):
+                    continue
+                    
+                cwd = os.path.join(container, proj['name'])
+                cmd = ['git', 'diff', 'trunk..master', '--exit-code']
+                retcode = subprocess.call(cmd, cwd=cwd, stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
+                if retcode != 0:
+                    print '%s has local changes missing from %s/trunk' % (proj['name'], proj['url'])
+                
+        
+
     def update(self, default_container=None, *sections):
         if default_container is None:
             default_container = os.path.join(self.config_location, 'src')
@@ -144,12 +166,19 @@ pulled.
                            'This can be overridden on a per-project basis in the config file. '
                            'Defaults to ./src relative to the location of the given '
                            'configuration file.')
+    parser.add_option('-s', '--status', dest='status', action='store_true',
+                      help='Checks the status of git-svn repositories against '
+                           'the current trunk and reports any projects that '
+                           'have local changes waiting to be dcommitted)')
 
     parser.set_defaults(config='gitexternals.cfg')
     options, args = parser.parse_args()
     
     ctl = GitControl(options.config)
-    ctl.update(options.container, *args)
+    if options.status:
+        ctl.check_svn(options.container, *args)
+    else:
+        ctl.update(options.container, *args)
 
 
 if __name__ == '__main__':
