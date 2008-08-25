@@ -1,8 +1,11 @@
 import unittest
-import gitctl
 import tempfile
 import shutil
 import os
+
+import gitctl
+import gitctl.command
+
 
 class GitControlTestCase(unittest.TestCase):
 
@@ -230,8 +233,24 @@ class TestGitCommand(GitControlTestCase):
         self.assertEquals(project_path, commands[0][1])
 
 
+class TestArgumentParser(unittest.TestCase):
+    
+    def test_gitctl_create_with_defaults(self):
+        args = gitctl.command.parser.parse_args('create my.project'.split())
+        self.assertEquals(args.project, ['my.project'])
+        self.assertEquals(args.skip_remote, False)
+        self.assertEquals(args.skip_local, False)
+    
+    def test_gitctl_create_with_options(self):
+        args = gitctl.command.parser.parse_args('create my.project --skip-remote --skip-local'.split())
+        self.assertEquals(args.project, ['my.project'])
+        self.assertEquals(args.skip_remote, True)
+        self.assertEquals(args.skip_local, True)
+
+
 def test_suite():
     return unittest.TestSuite([
             unittest.makeSuite(TestConfigParser),
             unittest.makeSuite(TestGitCommand),
+            unittest.makeSuite(TestArgumentParser),
             ])
