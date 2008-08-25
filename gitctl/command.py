@@ -22,6 +22,7 @@ parser_create.add_argument('project', nargs=1, help='Name of the project')
 
 # 'gitctl update'
 parser_update = cmd_parsers.add_parser('update')
+parser_update.add_argument('projects', nargs='*')
 
 # 'gitctl pending'
 parser_pending = cmd_parsers.add_parser('pending')
