@@ -30,6 +30,7 @@ setup(name='gitctl',
       zip_safe=True,
       install_requires=[
         'setuptools',
+        'argparse',
           # -*- Extra requirements: -*-
         ],
       test_suite='gitctl.tests.test_suite',
