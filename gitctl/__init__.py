@@ -4,6 +4,9 @@ import subprocess
 import sys
 import os
 
+import gitctl.command
+import gitctl.handler
+
 class GitControl(object):
     """Helper class to facilitate cloning/updating multiple git/git-svn
     repositories.
@@ -147,7 +150,7 @@ class GitControl(object):
         return commands
 
 
-def main():
+def main_old():
     from optparse import OptionParser
 
     usage = """%prog <options> [proj1 [proj2]]...
@@ -180,6 +183,10 @@ pulled.
     else:
         ctl.update(options.container, *args)
 
+
+def main():
+    args = gitctl.command.parser.parse_args()
+    args.func(args)
 
 if __name__ == '__main__':
     main()

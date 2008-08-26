@@ -37,6 +37,7 @@ setup(name='gitctl',
       entry_points="""
       # -*- Entry points: -*-
       [console_scripts]
+      gitctl_old = gitctl:main_old
       gitctl = gitctl:main
       """,
       )

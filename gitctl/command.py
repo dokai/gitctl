@@ -2,6 +2,7 @@
 """CLI command parsing."""
 
 import argparse
+import gitctl.handler
 
 parser = argparse.ArgumentParser(prog='gitctl')
 
@@ -19,6 +20,7 @@ parser_create.add_argument('--skip-remote', action='store_true', default=False,
 parser_create.add_argument('--skip-local', action='store_true', default=False,
                            help='Skip creating local tracking branches')
 parser_create.add_argument('project', nargs=1, help='Name of the project')
+parser_create.set_defaults(func=gitctl.handler.gitctl_create)
 
 # 'gitctl update'
 parser_update = cmd_parsers.add_parser('update')
