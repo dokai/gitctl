@@ -31,6 +31,7 @@ setup(name='gitctl',
       install_requires=[
         'setuptools',
         'argparse',
+        'GitPython',
           # -*- Extra requirements: -*-
         ],
       test_suite='gitctl.tests.test_suite',
