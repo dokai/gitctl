@@ -6,9 +6,21 @@ import shlex
 import logging
 import subprocess
 
+from StringIO import StringIO
 from ConfigParser import SafeConfigParser
 
 LOG = logging.getLogger('gitctl')
+
+def project_path(proj, relative=False):
+    """Returns the absolute project path unles relative=True, when a path
+    relative to the current directory will be returned.
+    """
+    path = os.path.realpath(
+        os.path.abspath(os.path.join(proj['container'], proj['name'])))
+    if relative:
+        prefix_len = len(os.path.commonprefix(os.path.realpath(os.getcwd()), path)) + 1
+        path = path[prefix_len:]
+    return path
 
 def clean_working_dir(repository):
     """Returns True if the given repository has no uncommited changes."""
@@ -31,7 +43,7 @@ def run(command, cwd=None, echo=False):
     pipe = subprocess.Popen(command, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     retcode = pipe.wait()
     
-    return retcode, pipe.stdin.read(), pipe.stderr.read()
+    return retcode, pipe.stdout.read(), pipe.stderr.read()
     # return subprocess.call(command,
     #                        cwd=cwd,
     #                        stdout=open(os.devnull, 'w'),
@@ -40,6 +52,19 @@ def run(command, cwd=None, echo=False):
 
 def parse_config(config):
     """Parses the gitctl config file."""
+    parser = SafeConfigParser({'upstream' : 'origin'})
+    if len(parser.read([config, os.path.expanduser('~/.gitctl.cfg')])) == 0:
+        raise ValueError('Invalid config file: %s' % config)
+    
+    if not parser.has_section('gitctl'):
+        raise ValueError('The [gitctl] section is missing')
+    
+    upstream = parser.get('gitctl', 'upstream')
+    return {'upstream' : upstream,
+            'branches' : [('%s/%s' % (upstream, branch), branch)
+                          for branch
+                          in parser.get('gitctl', 'branches').split()],
+            'staging-branch' : '%s/%s' % (upstream, parser.get('gitctl', 'staging-branch'))}
 
 def parse_externals(config):
     """Parses the gitctl externals configuration."""
@@ -76,21 +101,18 @@ def parse_externals(config):
     
     return projects
 
-def generate_external_config(name, url, path, treeish=None, repo_type='git'):
-    """Returns a configuration section for the externals config."""
-    section = """
-    [%(name)s]
-    url = %(url)s
-    type = %(repo_type)s
-    treeish = %(treeish)s
-    dir = %(path)s    
-    """ % {'name' : name,
-           'url' : url,
-           'repo_type' : repo_type,
-           'path' : path,
-           'treeish' : treeish}
-    return '\n'.join([line.strip() for line in section.splitlines()])
-
+def generate_externals(projects):
+    """Generates an externals configuration file."""
+    config = SafeConfigParser()
+    for project in projects:
+        section = project.pop('name')
+        config.add_section(section)
+        for k, v in project.iteritems():
+            config.set(section, k, v)
+    buf = StringIO()
+    config.write(buf)
+    return buf.getvalue()
+    
 def gitctl_create(args):
     """Handles the 'gitctl create' command"""
     project_path = os.path.realpath(os.path.join(os.getcwd(), args.project[0]))
@@ -145,13 +167,13 @@ def gitctl_create(args):
         run(cmd, cwd=project_path, echo=args.show_commands)
 
 def gitctl_fetch(args):
+    """Fetches all projects."""
     projects = parse_externals(args.externals)
+    config = parse_config(args.config)
     
     for proj in projects:
-        project_path = os.path.realpath(
-            os.path.join(os.getcwd(), proj['container'], proj['name']))
-        assert os.path.exists(project_path)
-        run('git fetch', cwd=project_path, echo=args.show_commands)
+        repository = git.Repo(project_path(proj))
+        repository.git.fetch(config['upstream'])
 
 def gitctl_update(args):
     """Updates the external projects.
@@ -160,15 +182,17 @@ def gitctl_update(args):
     Otherwise it will cloned.
     """
     projects = parse_externals(args.externals)
+    config = parse_config(args.config)
     
     for proj in projects:
-        project_path = os.path.realpath(
-            os.path.join(os.getcwd(), proj['container'], proj['name']))
+        path = project_path(proj)
+        if os.path.exists(path):
+            repository = git.Repo(path)
+            if not clean_working_dir(repository):
+                print proj['name'], 'has local changes. Please commit or stash them and try again.'
+                continue
 
-        if os.path.exists(project_path):
-            repository = git.Repo(project_path)
-            assert clean_working_dir(repository)
-
+            print 'Updating', proj['name']
             if args.rebase:
                 repository.git.pull('--rebase')
             else:
@@ -176,67 +200,89 @@ def gitctl_update(args):
         else:
             # GitPython only operates on existing repositories, so we need to perform the
             # clone operation manually.
-            cmd = 'git clone %s %s' % (proj['url'], project_path)
+            print 'Cloning', proj['name']
+            cmd = 'git clone %s %s' % (proj['url'], path)
             run(cmd, echo=args.show_commands)
+            # Set up the local tracking branches
+            repository = git.Repo(path)
+            remote_branches = set([name.strip()
+                                   for name
+                                   in repository.git.branch('-r').splitlines()])
+            for remote, local in config['branches']:
+                if remote in remote_branches:
+                    repository.git.branch('--track', local, remote)
+            # Check out the given treeish
+            repository.git.checkout(proj['treeish'])
+            # Get rid of the local master branch
+            #repository.git.branch('-d', 'master')
 
 def gitctl_status(args):
     """Checks the status of all external projects."""
+    config = parse_config(args.config)
     projects = parse_externals(args.externals)
     
     for proj in projects:
-        project_path = os.path.realpath(
-            os.path.join(os.getcwd(), proj['container'], proj['name']))
-        
-        repository = git.Repo(project_path)
-        # Fetch upstream
-        repository.git.fetch('origin')
+        repository = git.Repo(project_path(proj))
+        if not args.no_fetch:
+            # Fetch upstream
+            repository.git.fetch(config['upstream'])
 
         if not clean_working_dir(repository):
             print '%s has uncommitted changes' % proj['name']
+            continue
             
         remote_branches = set([name.strip()
                                for name
                                in repository.git.branch('-r').splitlines()])
         
+        uptodate = True
         # TODO: Refactor the remote/local mapping into a configuration file.
-        for remote, local in [('origin/primacontrol/development', 'primacontrol/development'),
-                              ('origin/primacontrol/demo', 'primacontrol/demo'),
-                              ('origin/primacontrol/production', 'primacontrol/production')]:
+        for remote, local in config['branches']:
             if remote in remote_branches:
                 if len(repository.diff(remote, local).strip()) > 0:
-                    print '%s: Branch %s differs from upstream' % (proj['name'], local)
+                    print '%s: Branch ``%s`` differs from upstream' % (proj['name'], local)
+                    uptodate = False
+        if uptodate:
+            print proj['name'], 'OK'
 
 def gitctl_changes(args):
     projects = parse_externals(args.externals)
+    config = parse_config(args.config)
     
     for proj in projects:
-        project_path = os.path.realpath(
-            os.path.join(os.getcwd(), proj['container'], proj['name']))
-        
-        assert os.path.exists(project_path)
-        repository = git.Repo(project_path)
+        repository = git.Repo(project_path(proj))
         
         remote_branches = set([name.strip()
                                for name
                                in repository.git.branch('-r').splitlines()])
         
-        if 'origin/primacontrol/demo' not in remote_branches:
-            print 'Skipping', proj['name']
+        import pdb;pdb.set_trace()
+        if config['staging-branch'] not in remote_branches:
+            if not args.show_config:
+                print 'Skipping', proj['name']
             continue
         
         # Fetch from upstream so that we compare against the latest version
-        repository.git.fetch('origin')
+        repository.git.fetch(config['upstream'])
         # Get actual versions of both objects
         pinned_at = repository.git.rev_parse(proj['treeish'])
-        demo_at = repository.git.rev_parse('origin/primacontrol/demo')
+        demo_at = repository.git.rev_parse(config['staging-branch'])
         
         if pinned_at != demo_at:
             # The demo branch has advanced.
-            print '%s: %s' % (proj['name'], demo_at)
-            if args.diff:
-                print repository.git.log('--stat', '--summary', '-p', pinned_at, demo_at)
+            if args.show_config:
+                # Update the treeish to the latest version in the demo branch.
+                proj['treeish'] = demo_at
+            else:
+                print '%s: %s' % (proj['name'], demo_at)
+                if args.diff:
+                    print repository.git.log('--stat', '--summary', '-p', pinned_at, demo_at)
         else:
-            print proj['name'], 'is up-to-date'
+            if not args.show_config:
+                print proj['name'], 'is up-to-date'
+        
+    if args.show_config:
+        print generate_externals(projects)
 
 __all__ = ['gitctl_create', 'gitctl_fetch', 'gitctl_update', 'gitctl_status',
            'gitctl_changes',]

@@ -12,7 +12,8 @@ parser.add_argument('--externals', help='Location of the externals configuration
 parser.add_argument('--show-commands', action='store_true', help='Echoes git commands executed by the operation.')
 parser.set_defaults(
     show_commands=False,
-    externals='gitexternals.cfg')
+    externals='gitexternals.cfg',
+    config='gitctl.cfg')
 
 # Subparser for each command
 cmd_parsers = parser.add_subparsers(help='Sub-commands help')
@@ -36,13 +37,18 @@ parser_update.set_defaults(
 
 # 'gitctl status'
 parser_status = cmd_parsers.add_parser('status', help='Show the status of external projects.')
-parser_status.set_defaults(func=gitctl.handler.gitctl_status)
+parser_status.add_argument('--no-fetch', action='store_true', help='Check the status without fetching from upstream first. This is faster, but may be unreliable.')
+parser_status.set_defaults(
+    func=gitctl.handler.gitctl_status,
+    no_fetch=False)
 
 # 'gitctl changes'
 parser_changes = cmd_parsers.add_parser('changes', help='Show the changelog for production.')
 parser_changes.add_argument('--diff', action='store_true', help='Display the diff of changes.')
+parser_changes.add_argument('--show-config', action='store_true', help='Prints a new gitexternals configuration to stdout.')
 parser_changes.set_defaults(
     diff=False,
+    show_config=False,
     func=gitctl.handler.gitctl_changes)
 
 # 'gitctl fetch'
