@@ -10,9 +10,10 @@ from ConfigParser import SafeConfigParser
 
 LOG = logging.getLogger('gitctl')
 
-def clean_working_dir(path):
-    """Asserts that the given working has no uncommited changes."""
-    return True
+def clean_working_dir(repository):
+    """Returns True if the given repository has no uncommited changes."""
+    return len(repository.git.diff().strip()) == 0 and \
+           len(repository.git.diff('--cached').strip()) == 0
 
 def run(command, cwd=None, echo=False):
     """Executes the given command."""
@@ -42,7 +43,7 @@ def parse_config(config):
 
 def parse_externals(config):
     """Parses the gitctl externals configuration."""
-    parser = SafeConfigParser({'type' : 'git', 'treeish' : 'master'})
+    parser = SafeConfigParser({'type' : 'git'})
     if len(parser.read(config)) == 0:
         raise ValueError('Invalid config file: %s' % config)
 
@@ -165,14 +166,16 @@ def gitctl_update(args):
             os.path.join(os.getcwd(), proj['container'], proj['name']))
 
         if os.path.exists(project_path):
-            assert clean_working_dir(project_path)
-            # Perform a pull
+            repository = git.Repo(project_path)
+            assert clean_working_dir(repository)
+
             if args.rebase:
-                cmd = 'git pull --rebase'
+                repository.git.pull('--rebase')
             else:
-                cmd = 'git pull'
-            run(cmd, cwd=project_path, echo=args.show_commands)
+                repository.git.pull()
         else:
+            # GitPython only operates on existing repositories, so we need to perform the
+            # clone operation manually.
             cmd = 'git clone %s %s' % (proj['url'], project_path)
             run(cmd, echo=args.show_commands)
 
@@ -184,17 +187,24 @@ def gitctl_status(args):
         project_path = os.path.realpath(
             os.path.join(os.getcwd(), proj['container'], proj['name']))
         
+        repository = git.Repo(project_path)
         # Fetch upstream
-        # TODO: Check the existence of the 'origin' remote first
-        run('git fetch origin', cwd=project_path, echo=args.show_commands)
-        if not clean_working_dir(project_path):
+        repository.git.fetch('origin')
+
+        if not clean_working_dir(repository):
             print '%s has uncommitted changes' % proj['name']
-        # TODO: Check the existence of the branches first
-        for branch in ('development', 'demo', 'production'):
-            cmd = 'git diff origin/primacontrol/%(b)s primacontrol/%(b)s --exit-code' % { 'b' : branch }
-            retcode, _, _ = run(cmd, cwd=project_path, echo=args.show_commands)
-            if retcode != 0:
-                print '%s: Branch primacontrol/%s differs from upstream' % (proj['name'], branch)
+            
+        remote_branches = set([name.strip()
+                               for name
+                               in repository.git.branch('-r').splitlines()])
+        
+        # TODO: Refactor the remote/local mapping into a configuration file.
+        for remote, local in [('origin/primacontrol/development', 'primacontrol/development'),
+                              ('origin/primacontrol/demo', 'primacontrol/demo'),
+                              ('origin/primacontrol/production', 'primacontrol/production')]:
+            if remote in remote_branches:
+                if len(repository.diff(remote, local).strip()) > 0:
+                    print '%s: Branch %s differs from upstream' % (proj['name'], local)
 
 def gitctl_changes(args):
     projects = parse_externals(args.externals)
@@ -204,15 +214,29 @@ def gitctl_changes(args):
             os.path.join(os.getcwd(), proj['container'], proj['name']))
         
         assert os.path.exists(project_path)
-        # TODO: Check the existence of the 'origin' remote first
-        run('git fetch origin', cwd=project_path, echo=args.show_commands)
-        if len(proj['treeish']) == 40:
-            retcode, demo_at, _ = run('git rev-parse origin/primacontrol/demo', cwd=project_path, echo=args.show_commands) 
-            if proj['treeish'] != demo_at.strip():
-                print '%s: %s' % (proj['name'], demo_at.strip())
-                if args.diff:
-                    cmd = 'git log --stat -p %s origin/primacontrol/demo'
-                    print run(cmd, cwd=project_path, echo=args.show_commands)
+        repository = git.Repo(project_path)
+        
+        remote_branches = set([name.strip()
+                               for name
+                               in repository.git.branch('-r').splitlines()])
+        
+        if 'origin/primacontrol/demo' not in remote_branches:
+            print 'Skipping', proj['name']
+            continue
+        
+        # Fetch from upstream so that we compare against the latest version
+        repository.git.fetch('origin')
+        # Get actual versions of both objects
+        pinned_at = repository.git.rev_parse(proj['treeish'])
+        demo_at = repository.git.rev_parse('origin/primacontrol/demo')
+        
+        if pinned_at != demo_at:
+            # The demo branch has advanced.
+            print '%s: %s' % (proj['name'], demo_at)
+            if args.diff:
+                print repository.git.log('--stat', '--summary', '-p', pinned_at, demo_at)
+        else:
+            print proj['name'], 'is up-to-date'
 
 __all__ = ['gitctl_create', 'gitctl_fetch', 'gitctl_update', 'gitctl_status',
            'gitctl_changes',]
