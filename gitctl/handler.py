@@ -30,28 +30,18 @@ def clean_working_dir(repository):
     return len(g.diff().strip()) == 0 and \
            len(g.diff('--cached').strip()) == 0
 
-def run(command, cwd=None, echo=False):
+def run(command, cwd=None):
     """Executes the given command."""
     if hasattr(command, 'startswith'):
         # Split the command into tokens, honoring any quoted parts
         lexer = shlex.shlex(command)
         lexer.whitespace_split = True
         command = list(lexer)
-    if echo:
-        if cwd is not None:
-            print '> %s [%s]' % (' '.join(command), cwd)
-        else:
-            print '>', ' '.join(command)
 
     pipe = subprocess.Popen(command, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     retcode = pipe.wait()
     
     return retcode, pipe.stdout.read(), pipe.stderr.read()
-    # return subprocess.call(command,
-    #                        cwd=cwd,
-    #                        stdout=open(os.devnull, 'w'),
-    #                        stderr=subprocess.STDOUT)
-
 
 def parse_config(config):
     """Parses the gitctl config file."""
