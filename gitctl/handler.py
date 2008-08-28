@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 """Command handlers."""
 import os
+import sys
 import git
 import shlex
 import logging
@@ -9,7 +10,8 @@ import subprocess
 from StringIO import StringIO
 from ConfigParser import SafeConfigParser
 
-LOG = logging.getLogger('gitctl')
+logging.basicConfig(level=logging.INFO, format='%(message)s')
+LOG = logging.getLogger()
 
 def project_path(proj, relative=False):
     """Returns the absolute project path unless relative=True, when a path
@@ -126,9 +128,11 @@ def gitctl_create(args):
     config = parse_config(args.config)
     
     if not os.path.exists(project_path):
-        raise RuntimeError('Project path does not exist!')
+        LOG.critical('Project path does not exist!', project_path)
+        sys.exit(1)
     
     # TODO: Assert that project does not exist at git.hexagonit.fi
+    project_url = '%s:%s.git' % (config['upstream-url'], project_name)
     
     # Set up the remote bare repository
     initialize_remote = (
@@ -146,12 +150,11 @@ def gitctl_create(args):
             'commit_email_prefix' : config['commit-email-prefix'] },
         )
     run(initialize_remote)
+    LOG.info('Created new remote repository: %s', project_url)
     
     # Initialize the local directory.
     repository = git.Git(project_path)
     repository.init()
-    
-    project_url = '%s:%s.git' % (config['upstream-url'], project_name)
 
     # Create the initial commit
     repository.add('.')
@@ -167,23 +170,30 @@ def gitctl_create(args):
         repository.push(config['upstream'], local)
     repository.fetch(config['upstream'])
     
+    LOG.info('Created new local repository: %s', project_path)
+    
     # Set up the local branches to track the remote ones
     for remote, local in config['branches']:
         repository.branch('-f', '--track', local, remote)
+        LOG.info('Branch ``%s`` is tracking ``%s``', local, remote)
         
     # Checkout the development branch 
     repository.checkout(config['development-branch'])
     # Get rid of the default master branch
     repository.branch('-d', 'master')
+    
+    LOG.info('Checked out development branch ``%s``', config['development-branch'])
 
 def gitctl_fetch(args):
     """Fetches all projects."""
     projects = parse_externals(args.externals)
     config = parse_config(args.config)
     
+    LOG.info('Fetching projects..')
     for proj in projects:
         repository = git.Git(project_path(proj))
         repository.fetch(config['upstream'])
+        LOG.info(proj['name'])
 
 def gitctl_update(args):
     """Updates the external projects.
@@ -194,6 +204,7 @@ def gitctl_update(args):
     projects = parse_externals(args.externals)
     config = parse_config(args.config)
     
+    LOG.info('Updating projects..')
     for proj in projects:
         path = project_path(proj)
         if os.path.exists(path):
@@ -202,13 +213,13 @@ def gitctl_update(args):
                 print proj['name'], 'has local changes. Please commit or stash them and try again.'
                 continue
 
-            print 'Updating', proj['name']
+            LOG.info('Pulling %s', proj['name'])
             if args.rebase:
                 repository.pull('--rebase')
             else:
                 repository.pull()
         else:
-            print 'Cloning', proj['name']
+            LOG.info('Cloning %s', proj['name'])
             # Clone the repository
             temp = git.Git('/tmp')
             temp.clone(proj['url'], path)
@@ -230,7 +241,8 @@ def gitctl_status(args):
     """Checks the status of all external projects."""
     config = parse_config(args.config)
     projects = parse_externals(args.externals)
-    
+
+    LOG.info('Checking status..')
     for proj in projects:
         repository = git.Repo(project_path(proj))
         if not args.no_fetch:
@@ -238,7 +250,7 @@ def gitctl_status(args):
             repository.git.fetch(config['upstream'])
 
         if not clean_working_dir(repository):
-            print '%s has uncommitted changes' % proj['name']
+            LOG.info('%s .. uncommitted changes. Skipping.', proj['name'])
             continue
             
         remote_branches = set([name.strip()
@@ -246,19 +258,26 @@ def gitctl_status(args):
                                in repository.git.branch('-r').splitlines()])
         
         uptodate = True
-        # TODO: Refactor the remote/local mapping into a configuration file.
         for remote, local in config['branches']:
             if remote in remote_branches:
                 if len(repository.diff(remote, local).strip()) > 0:
-                    print '%s: Branch ``%s`` differs from upstream' % (proj['name'], local)
+                    LOG.info('%s .. branch ``%s`` out of sync with upstream', proj['name'], local)
                     uptodate = False
         if uptodate:
-            print proj['name'], 'OK'
+            LOG.info('%s .. OK', proj['name'])
 
 def gitctl_changes(args):
+    """Checks for changes between the stating branch and the currently pinned
+    versions in the externals configuration.
+    
+    It makes most sense when executed in the production buildout when the
+    reported differences are the ones most likely pending to be pushed into
+    production.
+    """
     projects = parse_externals(args.externals)
     config = parse_config(args.config)
-    
+
+    LOG.info('Comparing changes to pinned down versions..')
     for proj in projects:
         repository = git.Git(project_path(proj))
         
@@ -267,8 +286,10 @@ def gitctl_changes(args):
                                in repository.branch('-r').splitlines()])
         
         if config['staging-branch'] not in remote_branches:
+            # This looks to be a package that does not share our common repository layout
+            # which is possible with 3rd party packages etc. We can safely ignore it.
             if not args.show_config:
-                print 'Skipping', proj['name']
+                LOG.info('%s .. skipping.', proj['name'])
             continue
         
         # Fetch from upstream so that we compare against the latest version
@@ -283,12 +304,12 @@ def gitctl_changes(args):
                 # Update the treeish to the latest version in the demo branch.
                 proj['treeish'] = demo_at
             else:
-                print '%s: %s' % (proj['name'], demo_at)
+                LOG.info('%s .. latest staged revision at %s', proj['name'], demo_at)
                 if args.diff:
                     print repository.log('--stat', '--summary', '-p', pinned_at, demo_at)
         else:
             if not args.show_config:
-                print proj['name'], 'is up-to-date'
+                LOG.info('%s .. OK', proj['name'])
         
     if args.show_config:
         print generate_externals(projects)
