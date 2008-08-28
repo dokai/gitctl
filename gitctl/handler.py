@@ -68,12 +68,14 @@ def parse_externals(config):
     """Parses the gitctl externals configuration."""
     parser = SafeConfigParser({'type' : 'git'})
     if len(parser.read(config)) == 0:
-        raise ValueError('Invalid config file: %s' % config)
+        LOG.critical('Invalid externals configuration: %s', config)
+        sys.exit(1)
 
     projects = []
     for sec in parser.sections():
         if not parser.has_option(sec, 'url'):
-            raise ValueError('Section %s is missing the url option %s' % sec)
+            LOG.critical('Section %s is missing the ``url`` option in the externals configuration', sec)
+            sys.exit(1)
        
         proj = {
            'name' : sec.strip(),
