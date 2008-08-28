@@ -219,20 +219,17 @@ def gitctl_update(args):
             LOG.info('Cloning %s', proj['name'])
             # Clone the repository
             temp = git.Git('/tmp')
-            temp.clone(proj['url'], path)
+            temp.clone('--no-checkout', '--origin', config['upstream'],  proj['url'], path)
 
             # Set up the local tracking branches
             repository = git.Git(path)
-            remote_branches = set([name.strip()
-                                   for name
-                                   in repository.branch('-r').splitlines()])
+            remote_branches = set(repository.branch('-r').split())
+            local_branches = set(repository.branch().split())
             for remote, local in config['branches']:
-                if remote in remote_branches:
-                    repository.branch('--track', local, remote)
+                if remote in remote_branches and local not in local_branches:
+                    repository.branch('-f', '--track', local, remote)
             # Check out the given treeish
             repository.checkout(proj['treeish'])
-            # Get rid of the local master branch
-            #repository.branch('-d', 'master')
 
 def gitctl_status(args):
     """Checks the status of all external projects."""
@@ -247,7 +244,7 @@ def gitctl_status(args):
             repository.git.fetch(config['upstream'])
 
         if not clean_working_dir(repository):
-            LOG.info('%s .. uncommitted changes. Skipping.', proj['name'])
+            LOG.info('%s Uncommitted local changes', proj['name'].ljust(30, '.'))
             continue
             
         remote_branches = set([name.strip()
@@ -258,10 +255,10 @@ def gitctl_status(args):
         for remote, local in config['branches']:
             if remote in remote_branches:
                 if len(repository.diff(remote, local).strip()) > 0:
-                    LOG.info('%s .. branch ``%s`` out of sync with upstream', proj['name'], local)
+                    LOG.info('%s Branch ``%s`` out of sync with upstream', proj['name'].ljust(30, '.'), local)
                     uptodate = False
         if uptodate:
-            LOG.info('%s .. OK', proj['name'])
+            LOG.info('%s OK', proj['name'].ljust(30, '.'))
 
 def gitctl_changes(args):
     """Checks for changes between the stating branch and the currently pinned
