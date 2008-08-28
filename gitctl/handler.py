@@ -123,8 +123,13 @@ def gitctl_create(args):
         LOG.critical('Project path does not exist!', project_path)
         sys.exit(1)
     
-    # TODO: Assert that project does not exist at git.hexagonit.fi
     project_url = '%s:%s.git' % (config['upstream-url'], project_name)
+
+    # Make sure that the remote repository does not exist already.
+    retcode = run('ssh %s "test ! -d %s.git"' % (config['upstream-url'], project_name))
+    if retcode != 0:
+        LOG.error('Remote repository ``%s`` already exists. Aborting.', project_url)
+        sys.exit(1)
     
     # Set up the remote bare repository
     initialize_remote = (
