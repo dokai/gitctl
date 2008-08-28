@@ -24,8 +24,9 @@ def project_path(proj, relative=False):
 
 def clean_working_dir(repository):
     """Returns True if the given repository has no uncommited changes."""
-    return len(repository.git.diff().strip()) == 0 and \
-           len(repository.git.diff('--cached').strip()) == 0
+    g = isinstance(repository, git.Git) and repository or repository.git
+    return len(g.diff().strip()) == 0 and \
+           len(g.diff('--cached').strip()) == 0
 
 def run(command, cwd=None, echo=False):
     """Executes the given command."""
