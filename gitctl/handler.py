@@ -144,7 +144,7 @@ def gitctl_create(args):
             'commit_email' : config['commit-email'],
             'commit_email_prefix' : config['commit-email-prefix'] },
         )
-    run(initialize_remote, echo=args.show_commands)
+    run(initialize_remote)
     
     # Initialize the local directory.
     repository = git.Git(project_path)

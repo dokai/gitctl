@@ -9,9 +9,7 @@ parser = argparse.ArgumentParser(prog='gitctl')
 # Global parameters
 parser.add_argument('--config', help='Location of the configuration file. Defaults to ~/.gitctl.cfg')
 parser.add_argument('--externals', help='Location of the externals configuration file. Defaults to $PWD/gitexternals.cfg')
-parser.add_argument('--show-commands', action='store_true', help='Echoes git commands executed by the operation.')
 parser.set_defaults(
-    show_commands=False,
     externals='gitexternals.cfg',
     config='gitctl.cfg')
 
