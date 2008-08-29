@@ -186,13 +186,13 @@ def gitctl_changes(args):
         repository.fetch(config['upstream'])
         # Get actual versions of both objects
         pinned_at = repository.rev_parse(proj['treeish'])
-        demo_at = repository.rev_parse(config['staging-branch'])
+        staging_at = repository.rev_parse(config['staging-branch'])
         
-        if pinned_at != demo_at:
+        if pinned_at != staging_at:
             # The demo branch has advanced.
             if args.show_config:
                 # Update the treeish to the latest version in the demo branch.
-                proj['treeish'] = demo_at
+                proj['treeish'] = staging_at
             else:
                 LOG.info('%s Latest staged revision at %s', gitctl.utils.pretty(proj['name']), demo_at)
                 if args.diff:
