@@ -9,6 +9,9 @@ import subprocess
 from StringIO import StringIO
 from ConfigParser import SafeConfigParser
 
+def pretty(name, justification=30, fill='.'):
+    """Returns a left justified representation of ``name``."""
+    return name.ljust(justification, fill)
 
 def project_path(proj, relative=False):
     """Returns the absolute project path unless relative=True, when a path

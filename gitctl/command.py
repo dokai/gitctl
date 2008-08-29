@@ -10,7 +10,7 @@ import gitctl.utils
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 LOG = logging.getLogger()
 
-    
+
 def gitctl_create(args):
     """Handles the 'gitctl create' command"""
     project_path = os.path.realpath(os.path.join(os.getcwd(), args.project[0]))
@@ -84,11 +84,10 @@ def gitctl_fetch(args):
     projects = gitctl.utils.parse_externals(args.externals)
     config = gitctl.utils.parse_config(args.config)
     
-    LOG.info('Fetching projects..')
     for proj in projects:
         repository = git.Git(gitctl.utils.project_path(proj))
         repository.fetch(config['upstream'])
-        LOG.info(proj['name'])
+        LOG.info('%s Fetched', gitctl.utils.pretty(proj['name']))
 
 def gitctl_update(args):
     """Updates the external projects.
@@ -99,22 +98,21 @@ def gitctl_update(args):
     projects = gitctl.utils.parse_externals(args.externals)
     config = gitctl.utils.parse_config(args.config)
     
-    LOG.info('Updating projects..')
     for proj in projects:
         path = gitctl.utils.project_path(proj)
         if os.path.exists(path):
             repository = git.Git(path)
             if gitctl.utils.is_dirty(repository):
-                print proj['name'], 'has local changes. Please commit or stash them and try again.'
+                LOG.warning('%s Dirty working directory. Please commit or stash and try again.', gitctl.utils.pretty(proj['name']))
                 continue
 
-            LOG.info('Pulling %s', proj['name'])
             if args.rebase:
                 repository.pull('--rebase')
+                LOG.info('%s Rebased', gitctl.utils.pretty(proj['name']))
             else:
                 repository.pull()
+                LOG.info('%s Pulled', gitctl.utils.pretty(proj['name']))
         else:
-            LOG.info('Cloning %s', proj['name'])
             # Clone the repository
             temp = git.Git('/tmp')
             temp.clone('--no-checkout', '--origin', config['upstream'],  proj['url'], path)
@@ -128,6 +126,7 @@ def gitctl_update(args):
                     repository.branch('-f', '--track', local, remote)
             # Check out the given treeish
             repository.checkout(proj['treeish'])
+            LOG.info('%s Cloned and checked out ``%s``', gitctl.utils.pretty(proj['name']), proj['treeish'])
 
 def gitctl_status(args):
     """Checks the status of all external projects."""
@@ -142,7 +141,7 @@ def gitctl_status(args):
             repository.git.fetch(config['upstream'])
 
         if gitctl.utils.is_dirty(repository):
-            LOG.info('%s Uncommitted local changes', proj['name'].ljust(30, '.'))
+            LOG.info('%s Uncommitted local changes', gitctl.utils.pretty(proj['name']))
             continue
             
         remote_branches = set([name.strip()
@@ -153,10 +152,10 @@ def gitctl_status(args):
         for remote, local in config['branches']:
             if remote in remote_branches:
                 if len(repository.diff(remote, local).strip()) > 0:
-                    LOG.info('%s Branch ``%s`` out of sync with upstream', proj['name'].ljust(30, '.'), local)
+                    LOG.info('%s Branch ``%s`` out of sync with upstream', gitctl.utils.pretty(proj['name']), local)
                     uptodate = False
         if uptodate:
-            LOG.info('%s OK', proj['name'].ljust(30, '.'))
+            LOG.info('%s OK', gitctl.utils.pretty(proj['name']))
 
 def gitctl_changes(args):
     """Checks for changes between the stating branch and the currently pinned
@@ -169,7 +168,6 @@ def gitctl_changes(args):
     projects = gitctl.utils.parse_externals(args.externals)
     config = gitctl.utils.parse_config(args.config)
 
-    LOG.info('Comparing changes to pinned down versions..')
     for proj in projects:
         repository = git.Git(gitctl.utils.project_path(proj))
         
@@ -181,7 +179,7 @@ def gitctl_changes(args):
             # This looks to be a package that does not share our common repository layout
             # which is possible with 3rd party packages etc. We can safely ignore it.
             if not args.show_config:
-                LOG.info('%s .. skipping.', proj['name'])
+                LOG.info('%s Skipping.', gitctl.utils.pretty(proj['name']))
             continue
         
         # Fetch from upstream so that we compare against the latest version
@@ -196,12 +194,12 @@ def gitctl_changes(args):
                 # Update the treeish to the latest version in the demo branch.
                 proj['treeish'] = demo_at
             else:
-                LOG.info('%s .. latest staged revision at %s', proj['name'], demo_at)
+                LOG.info('%s Latest staged revision at %s', gitctl.utils.pretty(proj['name']), demo_at)
                 if args.diff:
                     print repository.log('--stat', '--summary', '-p', pinned_at, demo_at)
         else:
             if not args.show_config:
-                LOG.info('%s .. OK', proj['name'])
+                LOG.info('%s OK', gitctl.utils.pretty(proj['name']))
         
     if args.show_config:
         print gitctl.utils.generate_externals(projects)
