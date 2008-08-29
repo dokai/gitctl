@@ -1,9 +1,8 @@
-import gitctl.command
-import gitctl.handler
+import gitctl.parser
 
 def main():
     """Runs the gitctl functionality."""
-    args = gitctl.command.parser.parse_args()
+    args = gitctl.parser.parser.parse_args()
     args.func(args)
 
 if __name__ == '__main__':
