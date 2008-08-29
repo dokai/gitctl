@@ -2,7 +2,7 @@
 """CLI command parsing."""
 
 import argparse
-import gitctl.handler
+import gitctl.command
 
 parser = argparse.ArgumentParser(prog='gitctl')
 
@@ -23,21 +23,21 @@ parser_create.add_argument('--skip-remote', action='store_true', default=False,
 parser_create.add_argument('--skip-local', action='store_true', default=False,
                            help='Skip creating local tracking branches')
 parser_create.add_argument('project', nargs=1, help='Name of the project')
-parser_create.set_defaults(func=gitctl.handler.gitctl_create)
+parser_create.set_defaults(func=gitctl.command.gitctl_create)
 
 # 'gitctl update'
 parser_update = cmd_parsers.add_parser('update', help='Updates external projects.')
 parser_update.add_argument('projects', nargs='*')
 parser_update.add_argument('--rebase', action='store_true')
 parser_update.set_defaults(
-    func=gitctl.handler.gitctl_update,
+    func=gitctl.command.gitctl_update,
     rebase=False)
 
 # 'gitctl status'
 parser_status = cmd_parsers.add_parser('status', help='Show the status of external projects.')
 parser_status.add_argument('--no-fetch', action='store_true', help='Check the status without fetching from upstream first. This is faster, but may be unreliable.')
 parser_status.set_defaults(
-    func=gitctl.handler.gitctl_status,
+    func=gitctl.command.gitctl_status,
     no_fetch=False)
 
 # 'gitctl changes'
@@ -47,11 +47,11 @@ parser_changes.add_argument('--show-config', action='store_true', help='Prints a
 parser_changes.set_defaults(
     diff=False,
     show_config=False,
-    func=gitctl.handler.gitctl_changes)
+    func=gitctl.command.gitctl_changes)
 
 # 'gitctl fetch'
 parser_fetch = cmd_parsers.add_parser('fetch', help='Fetches all external projects.')
-parser_fetch.set_defaults(func=gitctl.handler.gitctl_fetch)
+parser_fetch.set_defaults(func=gitctl.command.gitctl_fetch)
 
 
 __all__ = ['parser']
