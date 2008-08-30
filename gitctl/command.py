@@ -144,9 +144,7 @@ def gitctl_status(args):
             LOG.info('%s Uncommitted local changes', gitctl.utils.pretty(proj['name']))
             continue
             
-        remote_branches = set([name.strip()
-                               for name
-                               in repository.git.branch('-r').splitlines()])
+        remote_branches = set(repository.git.branch('-r').split())
         
         uptodate = True
         for remote, local in config['branches']:
@@ -157,52 +155,66 @@ def gitctl_status(args):
         if uptodate:
             LOG.info('%s OK', gitctl.utils.pretty(proj['name']))
 
-def gitctl_changes(args):
-    """Checks for changes between the stating branch and the currently pinned
-    versions in the externals configuration.
-    
-    It makes most sense when executed in the production buildout when the
-    reported differences are the ones most likely pending to be pushed into
-    production.
+def gitctl_pending(args):
+    """Checks for pending changes between two consecutive states in our
+    workflow.
     """
     projects = gitctl.utils.parse_externals(args.externals)
     config = gitctl.utils.parse_config(args.config)
 
     for proj in projects:
         repository = git.Git(gitctl.utils.project_path(proj))
+        local_branches = set(repository.branch().split())
         
-        remote_branches = set([name.strip()
-                               for name
-                               in repository.branch('-r').splitlines()])
-        
-        if config['staging-branch'] not in remote_branches:
+        if config['development-branch'] not in local_branches:
             # This looks to be a package that does not share our common repository layout
             # which is possible with 3rd party packages etc. We can safely ignore it.
             if not args.show_config:
                 LOG.info('%s Skipping.', gitctl.utils.pretty(proj['name']))
             continue
         
-        # Fetch from upstream so that we compare against the latest version
-        repository.fetch(config['upstream'])
-        # Get actual versions of both objects
-        pinned_at = repository.rev_parse(proj['treeish'])
-        staging_at = repository.rev_parse(config['staging-branch'])
+        # Get actual versions of the trees to be compared.
+        if args.production:
+            # Compare the the pinned down version against the HEAD of the
+            # production branch
+            from_ = repository.rev_parse(proj['treeish'])
+            to = repository.rev_parse(config['production-branch'])
+        elif args.staging:
+            from_ = repository.rev_parse(config['production-branch'])
+            to = repository.rev_parse(config['staging-branch'])
+        elif args.dev:
+            from_ = repository.rev_parse(config['staging-branch'])
+            to = repository.rev_parse(config['development-branch'])
         
-        if pinned_at != staging_at:
-            # The demo branch has advanced.
-            if args.show_config:
-                # Update the treeish to the latest version in the demo branch.
-                proj['treeish'] = staging_at
+        if from_ != to:
+            # The comparison branch has advanced.
+            if args.show_config and args.production:
+                # Update the treeish to the latest version in the comparison branch.
+                proj['treeish'] = to
             else:
-                LOG.info('%s Latest staged revision at %s', gitctl.utils.pretty(proj['name']), demo_at)
+                commits = len(repository.log('--pretty=oneline', '%s..%s' % (from_, to)).splitlines())
+                if args.production:
+                    LOG.info('%s Branch ``%s`` is %s commits ahead of pinned down versions at revision %s',
+                             gitctl.utils.pretty(proj['name']), config['production-branch'], commits, to)
+                else:
+                    if args.staging:
+                        b1 = config['staging-branch']
+                        b2 = config['production-branch']
+                    elif args.dev:
+                        b1 = config['development-branch']
+                        b2 = config['staging-branch']
+                        
+                    LOG.info('%s Branch ``%s`` is %s commits ahead of ``%s``',
+                             gitctl.utils.pretty(proj['name']), b1, commits, b2)
+                    
                 if args.diff:
-                    print repository.log('--stat', '--summary', '-p', pinned_at, demo_at)
+                    print repository.log('--stat', '--summary', '-p', from_, to)
         else:
             if not args.show_config:
                 LOG.info('%s OK', gitctl.utils.pretty(proj['name']))
         
-    if args.show_config:
+    if args.show_config and args.production:
         print gitctl.utils.generate_externals(projects)
 
 __all__ = ['gitctl_create', 'gitctl_fetch', 'gitctl_update', 'gitctl_status',
-           'gitctl_changes',]
+           'gitctl_pending',]

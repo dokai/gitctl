@@ -62,8 +62,9 @@ def parse_config(config):
             'branches' : [('%s/%s' % (upstream, branch), branch)
                           for branch
                           in parser.get('gitctl', 'branches').split()],
-            'staging-branch' : '%s/%s' % (upstream, parser.get('gitctl', 'staging-branch')),
+            'staging-branch' : parser.get('gitctl', 'staging-branch'),
             'development-branch' : parser.get('gitctl', 'development-branch'),
+            'production-branch' : parser.get('gitctl', 'production-branch'),
             }
 
 def parse_externals(config):
