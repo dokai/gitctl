@@ -20,7 +20,7 @@ def project_path(proj, relative=False):
     path = os.path.realpath(
         os.path.abspath(os.path.join(proj['container'], proj['name'])))
     if relative:
-        prefix_len = len(os.path.commonprefix(os.path.realpath(os.getcwd()), path)) + 1
+        prefix_len = len(os.path.commonprefix([os.path.realpath(os.getcwd()), path])) + 1
         path = path[prefix_len:]
     return path
 

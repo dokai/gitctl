@@ -3,8 +3,10 @@ import tempfile
 import shutil
 import os
 
+import git
 import gitctl
 import gitctl.command
+import gitctl.utils
 
 
 class GitControlTestCase(unittest.TestCase):
@@ -20,237 +22,71 @@ class GitControlTestCase(unittest.TestCase):
         open(filename, 'w').write(data)
         return filename
 
+class TestCommandCreate(unittest.TestCase):
+    """Tests for the ``create`` command."""
 
-class TestConfigParser(GitControlTestCase):
+class TestCommandStatus(unittest.TestCase):
+    """Tests for the ``status`` command."""
+
+class TestUtils(unittest.TestCase):
+    """Tests for the utility functions."""
+
+    def setUp(self):
+        self.path = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.path)
     
-    def test_git_project_full_configuration(self):
-        config = self.config("""\
-[my.project]
-type = git
-url = git@github.com:dokai/my-project.git
-treeish = insane-refactoring
-dir = projects
-""")
-        ctl = gitctl.GitControl(config)
+    def test_pretty(self):
+        self.assertEquals('foobar....', gitctl.utils.pretty('foobar', 10))
+        self.assertEquals('barfoo              ', gitctl.utils.pretty('barfoo', 20, ' '))
 
-        self.assertEquals(1, len(ctl.projects))
-        self.assertEquals('my.project', ctl.projects[0]['name'])
-        self.assertEquals('git', ctl.projects[0]['type'])
-        self.assertEquals('git@github.com:dokai/my-project.git', ctl.projects[0]['url'])
-        self.assertEquals('insane-refactoring', ctl.projects[0]['treeish'])
-        self.assertEquals('projects', ctl.projects[0]['container'])
+    def test_project_path__absolute(self):
+        proj1 = {'container' : 'foo', 'name' : 'bar' }
+        proj2 = {'container' : '/foo/bar', 'name' : 'froobnoz' }
+        self.assertEquals(os.path.join(os.getcwd(), 'foo/bar'), gitctl.utils.project_path(proj1, relative=False))
+        self.assertEquals('/foo/bar/froobnoz', gitctl.utils.project_path(proj2, relative=False))
 
-    def test_git_project_defaults(self):
-        config = self.config("""\
-[my.project]
-url = git@github.com:dokai/my-project.git
-""")
-        ctl = gitctl.GitControl(config)
+    def test_project_path__relative(self):
+        proj1 = {'container' : 'foo', 'name' : 'bar' }
+        proj2 = {'container' : os.path.join(os.getcwd(), 'foo', 'bar'),
+                 'name' : 'froobnoz' }
 
-        self.assertEquals(1, len(ctl.projects))
-        self.assertEquals('my.project', ctl.projects[0]['name'])
-        self.assertEquals('git', ctl.projects[0]['type'])
-        self.assertEquals('git@github.com:dokai/my-project.git', ctl.projects[0]['url'])
-        self.assertEquals('master', ctl.projects[0]['treeish'])
-        self.failIf('container' in ctl.projects[0])
+        self.assertEquals('foo/bar', gitctl.utils.project_path(proj1, relative=True))
+        self.assertEquals('foo/bar/froobnoz', gitctl.utils.project_path(proj2, relative=True))
 
-    def test_gitsvn_project_default_options(self):
-        config = self.config("""\
-[other.project]
-url = https://svn.server.com/svn/other.project
-type = git-svn
-""")
-        ctl = gitctl.GitControl(config)
-
-        self.assertEquals(1, len(ctl.projects))
-        self.assertEquals('other.project', ctl.projects[0]['name'])
-        self.assertEquals('git-svn', ctl.projects[0]['type'])
-        self.assertEquals('https://svn.server.com/svn/other.project', ctl.projects[0]['url'])
-        self.failIf('svn-trunk' in  ctl.projects[0])
-        self.failIf('svn-tags' in ctl.projects[0])
-        self.failIf('svn-branches' in ctl.projects[0])
-        self.failIf('treeish' in ctl.projects[0])
-        self.failIf('container' in ctl.projects[0])
-
-    def test_gitsvn_project_custom_layout(self):
-        config = self.config("""\
-[other.project]
-url = https://svn.server.com/svn/other.project
-type = git-svn
-svn-trunk = project/trunk
-svn-tags = project/tags
-svn-branches = project/branches
-""")
-        ctl = gitctl.GitControl(config)
-
-        self.assertEquals(1, len(ctl.projects))
-        self.assertEquals('other.project', ctl.projects[0]['name'])
-        self.assertEquals('git-svn', ctl.projects[0]['type'])
-        self.assertEquals('https://svn.server.com/svn/other.project', ctl.projects[0]['url'])
-        self.assertEquals('project/trunk', ctl.projects[0]['svn-trunk'])
-        self.assertEquals('project/tags', ctl.projects[0]['svn-tags'])
-        self.assertEquals('project/branches', ctl.projects[0]['svn-branches'])
-        self.failIf('treeish' in ctl.projects[0])
-        self.failIf('container' in ctl.projects[0])
-
-    def test_gitsvn_clone_options(self):
-        config = self.config("""\
-[other.project]
-url = https://svn.server.com/svn/other.project
-type = git-svn
-svn-clone-options =
-    --username=dokai
-    --no-metadata
-    --prefix=foobar
-""")
-        ctl = gitctl.GitControl(config)
-
-        self.assertEquals(1, len(ctl.projects))
-        self.assertEquals('other.project', ctl.projects[0]['name'])
-        self.assertEquals(['--username=dokai', '--no-metadata', '--prefix=foobar'],
-                          ctl.projects[0]['svn-clone-options'])
-
-
-
-    def test_gitsvn_project_trunk_only(self):
-        config = self.config("""\
-[other.project]
-url = https://svn.server.com/svn/other.project
-type = git-svn
-svn-trunk = project/trunk
-""")
-        ctl = gitctl.GitControl(config)
-
-        self.assertEquals(1, len(ctl.projects))
-        self.assertEquals('other.project', ctl.projects[0]['name'])
-        self.assertEquals('git-svn', ctl.projects[0]['type'])
-        self.assertEquals('https://svn.server.com/svn/other.project', ctl.projects[0]['url'])
-        self.assertEquals('project/trunk', ctl.projects[0]['svn-trunk'])
-        self.failIf('svn-tags' in ctl.projects[0])
-        self.failIf('svn-branches' in ctl.projects[0])
-        self.failIf('treeish' in ctl.projects[0])
-        self.failIf('container' in ctl.projects[0])
-
-
-    def test_multiple_projects(self):
-        config = self.config("""\
-[my.project]
-url = git@github.com:dokai/my-project.git
-
-[foo.bar]
-url = git@git.server.com:foobar/foo.bar.git
-
-[other.project]
-url = https://svn.server.com/svn/other.project
-type = git-svn
-""")
-        ctl = gitctl.GitControl(config)
-
-        self.assertEquals(3, len(ctl.projects))
-        self.assertEquals(set(['my.project', 'foo.bar', 'other.project']),
-                          set([p['name'] for p in ctl.projects]))
-
-
-class TestGitCommand(GitControlTestCase):
+    def test_is_dirty__clean(self):
+        repo = git.Git(self.path)
+        repo.init()
+        open(os.path.join(self.path, 'foobar.txt'), 'w').write('Lorem lipsum')
+        repo.add('foobar.txt')
+        repo.commit('-m "dummy"')
+        
+        self.failIf(gitctl.utils.is_dirty(repo))
     
-    def test_git_clone(self):
-        ctl = gitctl.GitControl(self.config(""))
-        project = {
-            'name' : 'my.project',
-            'url' : 'git@github.com:dokai/my-project.git',
-            'treeish' : 'master',
-            'type' : 'git',
-            }
-        project_path = os.path.join(self.path, 'my.project')
-        commands = ctl.cmd(project, self.path)
-        self.assertEquals(2, len(commands))
+    def test_is_dirty__dirty_working_directory(self):
+        repo = git.Git(self.path)
+        repo.init()
+        open(os.path.join(self.path, 'foobar.txt'), 'w').write('Lorem lipsum')
+        repo.add('foobar.txt')
+        repo.commit('-m "dummy"')
+        open(os.path.join(self.path, 'foobar.txt'), 'w').write('Lipsum lorem')
+        
+        self.failUnless(gitctl.utils.is_dirty(repo))
+        
+    def test_is_dirty__dirty_index(self):
+        repo = git.Git(self.path)
+        repo.init()
+        open(os.path.join(self.path, 'foobar.txt'), 'w').write('Lorem lipsum')
+        repo.add('foobar.txt')
+        repo.commit('-m "dummy"')
+        open(os.path.join(self.path, 'foobar.txt'), 'w').write('Lipsum lorem')
+        repo.add('foobar.txt')
 
-        self.assertEquals(['git', 'clone', '--no-checkout', project['url'], project_path],
-                          commands[0][0])
-        self.failUnless(commands[0][1] is None)
-
-        self.assertEquals(['git', 'checkout', project['treeish']], commands[1][0])
-        self.assertEquals(project_path, commands[1][1])
-
-    def test_git_pull(self):
-        ctl = gitctl.GitControl(self.config(""))
-        project_path = os.path.join(self.path, 'my.project')
-
-        project = {
-            'name' : 'my.project',
-            'url' : 'git@github.com:dokai/my-project.git',
-            'treeish' : 'master',
-            'type' : 'git',
-            }
-
-        os.makedirs(project_path)
-        commands = ctl.cmd(project, self.path)
-
-        self.assertEquals(1, len(commands))
-        self.assertEquals(['git', 'pull', '--rebase', 'origin'], commands[0][0])
-        self.assertEquals(project_path, commands[0][1])
-
-    
-    def test_gitsvn_clone(self):
-        ctl = gitctl.GitControl(self.config(""))
-        project_path = os.path.join(self.path, 'my.project')
-
-        project = {
-            'name' : 'my.project',
-            'url' : 'https://svn.server.com/my.project',
-            'type' : 'git-svn',
-            'svn-trunk' : 'trunk',
-            'svn-tags' : 'tags',
-            'svn-branches' : 'branches',
-            }
-
-        commands = ctl.cmd(project, self.path)
-
-        self.assertEquals(2, len(commands))
-        self.assertEquals(['git', 'svn', 'clone', '-T', 'trunk', '-t', 'tags', '-b', 'branches', 'https://svn.server.com/my.project', project_path], commands[0][0])
-        self.assertEquals(None, commands[0][1])
-        self.assertEquals(['git', 'repack', '-d'], commands[1][0])
-        self.assertEquals(project_path, commands[1][1])
-
-    def test_gitsvn_rebase(self):
-        ctl = gitctl.GitControl(self.config(""))
-        project_path = os.path.join(self.path, 'my.project')
-
-        project = {
-            'name' : 'my.project',
-            'url' : 'https://svn.server.com/my.project',
-            'type' : 'git-svn',
-            'svn-trunk' : 'trunk',
-            'svn-tags' : 'tags',
-            'svn-branches' : 'branches',
-            }
-
-        os.makedirs(project_path)
-        commands = ctl.cmd(project, self.path)
-
-        self.assertEquals(1, len(commands))
-        self.assertEquals(['git', 'svn', 'rebase'], commands[0][0])
-        self.assertEquals(project_path, commands[0][1])
-
-
-class TestArgumentParser(unittest.TestCase):
-    
-    def test_gitctl_create_with_defaults(self):
-        args = gitctl.command.parser.parse_args('create my.project'.split())
-        self.assertEquals(args.project, ['my.project'])
-        self.assertEquals(args.skip_remote, False)
-        self.assertEquals(args.skip_local, False)
-    
-    def test_gitctl_create_with_options(self):
-        args = gitctl.command.parser.parse_args('create my.project --skip-remote --skip-local'.split())
-        self.assertEquals(args.project, ['my.project'])
-        self.assertEquals(args.skip_remote, True)
-        self.assertEquals(args.skip_local, True)
+        self.failUnless(gitctl.utils.is_dirty(repo))
 
 
 def test_suite():
     return unittest.TestSuite([
-            unittest.makeSuite(TestConfigParser),
-            unittest.makeSuite(TestGitCommand),
-            unittest.makeSuite(TestArgumentParser),
+            unittest.makeSuite(TestUtils),
             ])
