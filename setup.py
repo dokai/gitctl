@@ -5,7 +5,7 @@ import os.path
 def read(*rnames):
     return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
 
-version = '1.0b1'
+version = '2.0a1'
 
 setup(name='gitctl',
       version=version,
@@ -38,7 +38,6 @@ setup(name='gitctl',
       entry_points="""
       # -*- Entry points: -*-
       [console_scripts]
-      gitctl_old = gitctl:main_old
       gitctl = gitctl:main
       """,
       )
