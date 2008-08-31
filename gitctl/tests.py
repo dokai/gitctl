@@ -13,6 +13,8 @@ import gitctl
 import gitctl.command
 import gitctl.utils
 
+def join(*parts):
+    return os.path.realpath(os.path.abspath(os.path.join(*parts)))
 
 class GitControlTestCase(unittest.TestCase):
 
@@ -102,8 +104,29 @@ treeish = development
         
         return clone
 
-class TestCommandCreate(unittest.TestCase):
-    """Tests for the ``create`` command."""
+class TestCommandUpdate(CommandTestCase):
+    """Tests for the ``update`` command."""
+    
+    def test_update__clone(self):
+        # Mock some command line arguments
+        self.args = mock.Mock()
+        self.args.config = os.path.join(self.container, 'gitctl.cfg')
+        self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
+        
+        local_path = join(self.container, 'project.local')
+        
+        self.failIf(os.path.exists(local_path))
+        gitctl.command.gitctl_update(self.args)
+        self.failUnless(os.path.exists(local_path))
+        
+        repo = git.Git(local_path)
+        # Make sure that we have the local tracking branches set up correctly.
+        info = ' '.join(repo.remote('show', 'origin').split())
+        self.failUnless(info.startswith('* remote origin'))
+        self.failUnless(info.endswith('Tracked remote branches development production staging'))
+        # Make sure we have the right branch checked out.
+        self.assertEquals('* development', [b.strip() for b in repo.branch().splitlines() if b.startswith('*')][0])
+
 
 class TestCommandStatus(CommandTestCase):
     """Tests for the ``status`` command."""
@@ -325,5 +348,6 @@ treeish = development
 def test_suite():
     return unittest.TestSuite([
             unittest.makeSuite(TestCommandStatus),
+            unittest.makeSuite(TestCommandUpdate),
             unittest.makeSuite(TestUtils),
             ])
