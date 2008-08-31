@@ -7,9 +7,7 @@ import logging
 
 import gitctl.utils
 
-logging.basicConfig(level=logging.INFO, format='%(message)s')
-LOG = logging.getLogger()
-
+LOG = logging.getLogger('gitctl')
 
 def gitctl_create(args):
     """Handles the 'gitctl create' command"""
@@ -133,7 +131,6 @@ def gitctl_status(args):
     config = gitctl.utils.parse_config(args.config)
     projects = gitctl.utils.parse_externals(args.externals)
 
-    LOG.info('Checking status..')
     for proj in projects:
         repository = git.Repo(gitctl.utils.project_path(proj))
         if not args.no_fetch:
