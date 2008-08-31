@@ -83,10 +83,9 @@ def parse_externals(config):
         proj = {
            'name' : sec.strip(),
            'url' : parser.get(sec, 'url').strip(),
-           'type' : parser.get(sec, 'type').strip() }
-        
-        if parser.has_option(sec, 'container'):
-            proj['container'] = parser.get(sec, 'container').strip()
+           'type' : parser.get(sec, 'type').strip(),
+           'container' : parser.get(sec, 'container').strip(),
+           }
 
         if proj['type'] not in ('git', 'git-svn'):
             raise ValueError('Invalid type: %s. Supported types are "git" and "git-svn".' % proj['type'])

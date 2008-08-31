@@ -1,6 +1,7 @@
 import unittest
 import tempfile
 import shutil
+import copy
 import os
 
 import git
@@ -123,6 +124,77 @@ commit-email-prefix = [GIT]
         self.assertEquals('production', conf['production-branch'])
         self.assertEquals('commit@non.existing.tld', conf['commit-email'])
         self.assertEquals('[GIT]', conf['commit-email-prefix'])
+
+
+    def test_parse_externals(self):
+        ext = os.path.join(self.path, 'gitexternals.cfg')
+        open(ext, 'w').write("""
+[my.project]
+url = git@github.com:dokai/my-project
+container = src
+type = git
+treeish = development
+
+[your.project]
+url = git@github.com:dokai/your-project
+container = src
+type = git
+treeish = master
+        """.strip())
+        projects = gitctl.utils.parse_externals(ext)
+        self.assertEquals([{'container': 'src',
+                            'name': 'your.project',
+                            'treeish': 'master',
+                            'type': 'git',
+                            'url': 'git@github.com:dokai/your-project'},
+                           {'container': 'src',
+                            'name': 'my.project',
+                            'treeish': 'development',
+                            'type': 'git',
+                            'url': 'git@github.com:dokai/my-project'}],
+                           projects)
+
+    def test_generate_externals(self):
+        projects = [{'container': 'src',
+                     'name': 'your.project',
+                     'treeish': 'master',
+                     'type': 'git',
+                     'url': 'git@github.com:dokai/your-project'},
+                    {'container': 'src',
+                     'name': 'my.project',
+                     'treeish': 'development',
+                     'type': 'git',
+                     'url': 'git@github.com:dokai/my-project'}]
+        self.assertEquals("""
+[your.project]
+url = git@github.com:dokai/your-project
+container = src
+type = git
+treeish = master
+
+[my.project]
+url = git@github.com:dokai/my-project
+container = src
+type = git
+treeish = development
+         """.strip(), gitctl.utils.generate_externals(projects).strip())
+    
+    def test_externals_roundtrip(self):
+        projects = [{'container': 'src',
+                     'name': 'your.project',
+                     'treeish': 'master',
+                     'type': 'git',
+                     'url': 'git@github.com:dokai/your-project'},
+                    {'container': 'src',
+                     'name': 'my.project',
+                     'treeish': 'development',
+                     'type': 'git',
+                     'url': 'git@github.com:dokai/my-project'}]
+
+        ext = os.path.join(self.path, 'gitexternals.cfg')
+        open(ext, 'w').write(gitctl.utils.generate_externals(copy.deepcopy(projects)))
+
+        self.assertEquals(projects, gitctl.utils.parse_externals(ext))
 
 def test_suite():
     return unittest.TestSuite([
