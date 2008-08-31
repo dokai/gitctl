@@ -1,8 +1,12 @@
 import unittest
 import tempfile
+import logging
 import shutil
+import mock
 import copy
 import os
+
+from StringIO import StringIO
 
 import git
 import gitctl
@@ -23,11 +27,114 @@ class GitControlTestCase(unittest.TestCase):
         open(filename, 'w').write(data)
         return filename
 
+class CommandTestCase(unittest.TestCase):
+    """Base class for gitcl command tests."""
+
+    def setUp(self):
+        self.container = tempfile.mkdtemp()
+
+        # Set up a logging handler we can use in the tests
+        self.output = output = []
+        stream = mock.Mock()
+        stream.write = lambda *args: output.append((args[0] % args[1:]).strip())
+        stream.flush = lambda:None
+        console = logging.StreamHandler(stream)
+        formatter = logging.Formatter('%(message)s')
+        console.setLevel(logging.INFO)
+        console.setFormatter(formatter)
+        logging.getLogger('gitctl').addHandler(console)
+        logging.getLogger('gitctl').setLevel(logging.INFO)
+        
+        # Set up a Git repository that will mock an upstream for us
+        self.upstream_path = os.path.join(self.container, 'project.git')
+        os.makedirs(self.upstream_path)
+        self.upstream = git.Git(self.upstream_path)
+        self.upstream.init()
+        
+        open(os.path.join(self.upstream_path, 'foobar.txt'), 'w').write('Lorem lipsum')
+        self.upstream.add('foobar.txt')
+        self.upstream.commit('-m "Initial commit"')
+        self.upstream.branch('development')
+        self.upstream.branch('staging')
+        self.upstream.branch('production')
+        self.upstream.checkout('development')
+        self.upstream.branch('-d', 'master')
+        
+        # Create a gitcl.cfg configuration
+        open(os.path.join(self.container, 'gitctl.cfg'), 'w').write("""
+[gitctl]
+upstream = origin
+upstream-url = %s
+branches =
+    development
+    staging
+    production
+development-branch = development
+staging-branch = staging
+production-branch = production
+commit-email = commit@non.existing.tld
+commit-email-prefix = [GIT]
+        """.strip() % self.container)
+
+        # Create an externals configuration
+        open(os.path.join(self.container, 'gitexternals.cfg'), 'w').write("""
+[project.local]
+url = %s
+container = %s
+type = git
+treeish = development
+        """.strip() % (self.upstream_path, self.container))
+
+
+    def tearDown(self):
+        shutil.rmtree(self.container)
+        
+
 class TestCommandCreate(unittest.TestCase):
     """Tests for the ``create`` command."""
 
-class TestCommandStatus(unittest.TestCase):
+class TestCommandStatus(CommandTestCase):
     """Tests for the ``status`` command."""
+
+    def setUp(self):
+        super(self.__class__, self).setUp()
+        
+        # Create the local tracking repository manually
+        self.local_path = os.path.join(self.container, 'project.local')
+        temp = git.Git(self.container)
+        temp.clone(self.upstream_path, self.local_path)
+        self.local = git.Git(self.local_path)
+        self.local.branch('-f', '--track', 'production', 'origin/production')
+        self.local.branch('-f', '--track', 'staging', 'origin/staging')
+        
+        # Mock some command line arguments
+        self.args = mock.Mock()
+        self.args.config = os.path.join(self.container, 'gitctl.cfg')
+        self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
+
+    def test_status__ok(self):
+        gitctl.command.gitctl_status(self.args)
+        self.assertEquals(1, len(self.output))
+        self.assertEquals('project.local................. OK', self.output[0])
+    
+    def test_status__dirty_working_directory(self):
+        open(os.path.join(self.local_path, 'make_wd_dirty.txt'), 'w').write('Lorem')
+        self.local.add('make_wd_dirty.txt')
+        
+        gitctl.command.gitctl_status(self.args)
+        self.assertEquals(1, len(self.output))
+        self.assertEquals('project.local................. Uncommitted local changes', self.output[0])
+
+    def test_status__out_of_sync(self):
+        open(os.path.join(self.local_path, 'new_file.txt'), 'w').write('Lorem')
+        self.local.add('new_file.txt')
+        self.local.commit('-m', 'Foobar')
+        
+        gitctl.command.gitctl_status(self.args)
+        self.assertEquals(1, len(self.output))
+        self.assertEquals('project.local................. Branch ``development`` out of sync with upstream', self.output[0])
+
+
 
 class TestUtils(unittest.TestCase):
     """Tests for the utility functions."""
@@ -198,5 +305,6 @@ treeish = development
 
 def test_suite():
     return unittest.TestSuite([
+            unittest.makeSuite(TestCommandStatus),
             unittest.makeSuite(TestUtils),
             ])
