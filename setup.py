@@ -9,7 +9,9 @@ version = '2.0a1'
 
 setup(name='gitctl',
       version=version,
-      description="Script to operate with multiple Git repositories in a manner similar to svn:externals.",
+      description="A particular Git workflow implementation with a "
+                  "development/staging/production code-flow model and support "
+                  "for multiple repositories as part of a larger project.",
       long_description=read('README.txt'),
       classifiers=[
         'Development Status :: 4 - Beta',
@@ -20,7 +22,7 @@ setup(name='gitctl',
         'Topic :: Software Development :: Version Control',
         'Topic :: Software Development :: Build Tools',
         ], # Get strings from http://pypi.python.org/pypi?:action=list_classifiers
-      keywords='git',
+      keywords='git workflow',
       author='Kai Lautaportti',
       author_email='kai.lautaportti@hexagonit.fi',
       url='http://github.com/dokai/gitctl',
@@ -32,6 +34,7 @@ setup(name='gitctl',
         'setuptools',
         'argparse',
         'GitPython',
+        'mock',
           # -*- Extra requirements: -*-
         ],
       test_suite='gitctl.tests.test_suite',
