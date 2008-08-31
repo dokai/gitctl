@@ -85,6 +85,44 @@ class TestUtils(unittest.TestCase):
 
         self.failUnless(gitctl.utils.is_dirty(repo))
 
+    def test_parse_config__invalid_file(self):
+        self.assertRaises(ValueError, lambda: gitctl.utils.parse_config(['/non/existing/path']))
+    
+    def test_parse_config__missing_section(self):
+        config = os.path.join(self.path, 'foo.cfg')
+        open(config, 'w').write("[invalid]")
+        self.assertRaises(ValueError, lambda: gitctl.utils.parse_config([config]))
+    
+    def test_parse_config(self):
+        config = os.path.join(self.path, 'gitctl.cfg')
+        open(config, 'w').write("""
+[gitctl]
+upstream = upstream
+upstream-url = git@github.com:dokai
+branches =
+    development
+    staging
+    production
+    experimental
+development-branch = development
+staging-branch = staging
+production-branch = production
+commit-email = commit@non.existing.tld
+commit-email-prefix = [GIT]
+        """.strip())
+        conf = gitctl.utils.parse_config([config])
+        self.assertEquals('upstream', conf['upstream'])
+        self.assertEquals('git@github.com:dokai', conf['upstream-url'])
+        self.assertEquals([('upstream/development', 'development'),
+                           ('upstream/staging', 'staging'),
+                           ('upstream/production', 'production'),
+                           ('upstream/experimental', 'experimental')],
+                           conf['branches'])
+        self.assertEquals('development', conf['development-branch'])
+        self.assertEquals('staging', conf['staging-branch'])
+        self.assertEquals('production', conf['production-branch'])
+        self.assertEquals('commit@non.existing.tld', conf['commit-email'])
+        self.assertEquals('[GIT]', conf['commit-email-prefix'])
 
 def test_suite():
     return unittest.TestSuite([

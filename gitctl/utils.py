@@ -45,11 +45,11 @@ def run(command, cwd=None):
     
     return retcode, pipe.stdout.read(), pipe.stderr.read()
 
-def parse_config(config):
+def parse_config(configs):
     """Parses the gitctl config file."""
     parser = SafeConfigParser({'upstream' : 'origin'})
-    if len(parser.read([config, os.path.expanduser('~/.gitctl.cfg')])) == 0:
-        raise ValueError('Invalid config file: %s' % config)
+    if len(parser.read(configs)) == 0:
+        raise ValueError('Invalid config file(s): %s' % ', '.join(configs))
     
     if not parser.has_section('gitctl'):
         raise ValueError('The [gitctl] section is missing')

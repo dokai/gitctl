@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 """CLI command parsing."""
 
+import os
 import argparse
 import gitctl.command
 
@@ -10,7 +11,7 @@ parser = argparse.ArgumentParser(
                 'multiple git repositories.')
 
 # Global parameters
-parser.add_argument('--config',
+parser.add_argument('--config', type=lambda x: [x],
     help='Location of the configuration file. If omitted the following '
          'locations will be search: $PWD/gitctl.cfg, ~/gitctl.cfg.')
 parser.add_argument('--externals',
@@ -18,7 +19,8 @@ parser.add_argument('--externals',
          '$PWD/gitexternals.cfg')
 parser.set_defaults(
     externals='gitexternals.cfg',
-    config='gitctl.cfg')
+    config=[os.path.expanduser('~/.gitctl.cfg'),
+            os.path.abspath('gitctl.cfg')])
 
 # Subparser for each command
 cmd_parsers = parser.add_subparsers(help='Commands')
