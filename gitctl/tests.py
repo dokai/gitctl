@@ -85,10 +85,22 @@ type = git
 treeish = development
         """.strip() % (self.upstream_path, self.container))
 
-
     def tearDown(self):
         shutil.rmtree(self.container)
         
+    def clone_upstream(self, name):
+        """Clones the upstream repository and returns a git.Git object bound
+        to the new clone.
+        """
+        path = os.path.join(self.container, name)
+        temp = git.Git(self.container)
+        temp.clone(self.upstream_path, path)
+        
+        clone = git.Git(path)
+        clone.branch('-f', '--track', 'production', 'origin/production')
+        clone.branch('-f', '--track', 'staging', 'origin/staging')
+        
+        return clone
 
 class TestCommandCreate(unittest.TestCase):
     """Tests for the ``create`` command."""
@@ -99,18 +111,13 @@ class TestCommandStatus(CommandTestCase):
     def setUp(self):
         super(self.__class__, self).setUp()
         
-        # Create the local tracking repository manually
-        self.local_path = os.path.join(self.container, 'project.local')
-        temp = git.Git(self.container)
-        temp.clone(self.upstream_path, self.local_path)
-        self.local = git.Git(self.local_path)
-        self.local.branch('-f', '--track', 'production', 'origin/production')
-        self.local.branch('-f', '--track', 'staging', 'origin/staging')
+        self.local = self.clone_upstream('project.local')
         
         # Mock some command line arguments
         self.args = mock.Mock()
         self.args.config = os.path.join(self.container, 'gitctl.cfg')
         self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
+        self.args.no_fetch = False
 
     def test_status__ok(self):
         gitctl.command.gitctl_status(self.args)
@@ -118,15 +125,15 @@ class TestCommandStatus(CommandTestCase):
         self.assertEquals('project.local................. OK', self.output[0])
     
     def test_status__dirty_working_directory(self):
-        open(os.path.join(self.local_path, 'make_wd_dirty.txt'), 'w').write('Lorem')
+        open(os.path.join(self.local.git_dir, 'make_wd_dirty.txt'), 'w').write('Lorem')
         self.local.add('make_wd_dirty.txt')
         
         gitctl.command.gitctl_status(self.args)
         self.assertEquals(1, len(self.output))
         self.assertEquals('project.local................. Uncommitted local changes', self.output[0])
 
-    def test_status__out_of_sync(self):
-        open(os.path.join(self.local_path, 'new_file.txt'), 'w').write('Lorem')
+    def test_status__out_of_sync__local_advanced(self):
+        open(os.path.join(self.local.git_dir, 'new_file.txt'), 'w').write('Lorem')
         self.local.add('new_file.txt')
         self.local.commit('-m', 'Foobar')
         
@@ -134,7 +141,19 @@ class TestCommandStatus(CommandTestCase):
         self.assertEquals(1, len(self.output))
         self.assertEquals('project.local................. Branch ``development`` out of sync with upstream', self.output[0])
 
-
+    def test_status__out_of_sync__remote_advanced(self):
+        # Create another local clone, add a file and push to make the remote
+        # ahead of self.local.
+        another = self.clone_upstream('another')
+        open(os.path.join(another.git_dir, 'random_addition.txt'), 'w').write('Foobar')
+        another.add('random_addition.txt')
+        another.commit('-m', 'Fubu')
+        another.push()
+        
+        gitctl.command.gitctl_status(self.args)
+        self.assertEquals(1, len(self.output))
+        self.assertEquals('project.local................. Branch ``development`` out of sync with upstream', self.output[0])
+        
 
 class TestUtils(unittest.TestCase):
     """Tests for the utility functions."""
