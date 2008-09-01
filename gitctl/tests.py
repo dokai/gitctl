@@ -55,7 +55,7 @@ class CommandTestCase(unittest.TestCase):
         
         open(os.path.join(self.upstream_path, 'foobar.txt'), 'w').write('Lorem lipsum')
         self.upstream.add('foobar.txt')
-        self.upstream.commit('-m "Initial commit"')
+        self.upstream.commit('-m Initial commit')
         self.upstream.branch('development')
         self.upstream.branch('staging')
         self.upstream.branch('production')
@@ -127,6 +127,42 @@ class TestCommandUpdate(CommandTestCase):
         # Make sure we have the right branch checked out.
         self.assertEquals('* development', [b.strip() for b in repo.branch().splitlines() if b.startswith('*')][0])
 
+    def test_update__pull(self):
+        # Mock some command line arguments
+        self.args = mock.Mock()
+        self.args.config = os.path.join(self.container, 'gitctl.cfg')
+        self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
+        self.args.rebase = False
+
+        local_path = join(self.container, 'project.local')
+        local = git.Git(local_path)
+
+        # Run update once to clone the project
+        gitctl.command.gitctl_update(self.args)
+        self.failUnless(os.path.exists(local_path))
+        # Assert that is has the initial commit only
+        log = local.log('--pretty=oneline').splitlines()
+        self.assertEquals(1, len(log))
+        self.failUnless(log[0].endswith('Initial commit'))
+        
+        # Create a parallel clone, commit some changes and push them upstream
+        another = self.clone_upstream('another')
+        open(os.path.join(another.git_dir, 'random_addition.txt'), 'w').write('Foobar')
+        another.add('random_addition.txt')
+        another.commit('-m', 'Second commit')
+        another.push()
+
+        # Run update again and assert we got back the changes
+        gitctl.command.gitctl_update(self.args)
+        self.assertEquals(['project.local................. Cloned and checked out ``development``',
+                           'project.local................. Pulled'],
+                          self.output)
+        log = local.log('--pretty=oneline').splitlines()
+        self.assertEquals(2, len(log))
+        self.failUnless(log[0].endswith('Second commit'))
+    
+    def test_update__rebase(self):
+        self.fail()
 
 class TestCommandStatus(CommandTestCase):
     """Tests for the ``status`` command."""
