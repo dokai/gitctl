@@ -33,6 +33,8 @@ class CommandTestCase(unittest.TestCase):
     """Base class for gitcl command tests."""
 
     def setUp(self):
+        # Create a temp container that will contain the test fixture. This will
+        # be cleaned up after each test.
         self.container = tempfile.mkdtemp()
 
         # Set up a logging handler we can use in the tests
@@ -162,6 +164,195 @@ class TestCommandUpdate(CommandTestCase):
         self.failUnless(log[0].endswith('Second commit'))
     
     def test_update__rebase(self):
+        # Mock some command line arguments
+        self.args = mock.Mock()
+        self.args.config = os.path.join(self.container, 'gitctl.cfg')
+        self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
+        self.args.rebase = True
+
+        local_path = join(self.container, 'project.local')
+        local = git.Git(local_path)
+
+        # Run update once to clone the project
+        gitctl.command.gitctl_update(self.args)
+        self.failUnless(os.path.exists(local_path))
+        # Assert that is has the initial commit only
+        log = local.log('--pretty=oneline').splitlines()
+        self.assertEquals(1, len(log))
+        self.failUnless(log[0].endswith('Initial commit'))
+        
+        # Create a parallel clone, commit some changes and push them upstream
+        another = self.clone_upstream('another')
+        open(os.path.join(another.git_dir, 'random_addition.txt'), 'w').write('Foobar')
+        another.add('random_addition.txt')
+        another.commit('-m', 'Second commit')
+        another.push()
+
+        # Run update again and assert we got back the changes
+        gitctl.command.gitctl_update(self.args)
+        self.assertEquals(['project.local................. Cloned and checked out ``development``',
+                           'project.local................. Rebased'],
+                          self.output)
+        log = local.log('--pretty=oneline').splitlines()
+        self.assertEquals(2, len(log))
+        self.failUnless(log[0].endswith('Second commit'))
+
+class TestCommandFetch(CommandTestCase):
+    """Tests for the ``fetch`` command."""
+
+    def setUp(self):
+        super(self.__class__, self).setUp()
+        
+        self.local = self.clone_upstream('project.local')
+        
+        # Mock some command line arguments
+        self.args = mock.Mock()
+        self.args.config = os.path.join(self.container, 'gitctl.cfg')
+        self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
+
+    def test_fetch(self):
+        # Create another local clone, add a file and push to make the remote
+        # ahead of self.local.
+        another = self.clone_upstream('another')
+        open(os.path.join(another.git_dir, 'random_addition.txt'), 'w').write('Foobar')
+        another.add('random_addition.txt')
+        another.commit('-m', 'Fubu')
+        another.push()
+
+        # Assert that our local tracking branch is at the same revision with the
+        # remote
+        self.assertEquals(self.local.rev_parse('development'),
+                          self.local.rev_parse('origin/development'))
+        # Fetch changes from upstream
+        gitctl.command.gitctl_fetch(self.args)
+        self.assertEquals('project.local................. Fetched', self.output[0])
+        self.failIfEqual(self.local.rev_parse('development'),
+                         self.local.rev_parse('origin/development'))
+
+
+class TestCommandPending(CommandTestCase):
+    """Tests for the ``pending`` command."""
+
+    def setUp(self):
+        super(self.__class__, self).setUp()
+        
+        self.local = self.clone_upstream('project.local')
+        
+        # Mock some command line arguments
+        self.args = mock.Mock()
+        self.args.config = os.path.join(self.container, 'gitctl.cfg')
+        self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
+        self.args.production = False
+        self.args.staging = False
+        self.args.dev = False
+        self.args.show_config = False
+        self.args.diff = False
+
+    def test_pending__third_party_package(self):
+        # Create a new repository to act as our second, third-party upstream.
+        # This will simply contain the default 'master' branch without our
+        # dev/staging/production setup.
+        thirdparty_path = os.path.join(self.container, 'thirdparty.git')
+        os.makedirs(thirdparty_path)
+        thirdparty = git.Git(thirdparty_path)
+        thirdparty.init()
+        
+        open(os.path.join(thirdparty_path, 'TOP_SECRET.txt'), 'w').write('Lorem lipsum')
+        thirdparty.add('TOP_SECRET.txt')
+        thirdparty.commit('-m Initial commit')
+
+        # Add the configuration to our gitexternals.cfg configuration
+        open(os.path.join(self.container, 'gitexternals.cfg'), 'w').write("\n\n" + """
+[thirdparty.local]
+url = %s
+container = %s
+type = git
+treeish = master
+        """.strip() % (thirdparty_path, self.container))
+
+        # Create a local clone
+        thirdparty.clone(thirdparty_path, join(self.container, 'thirdparty.local'))
+        
+        # Assert the third party repositories are skipped
+        gitctl.command.gitctl_pending(self.args)
+        self.assertEquals('thirdparty.local.............. Skipping.', self.output[0])
+
+    def test_pending__production_ok(self):
+        # By default all the branches are in-sync with each other
+        self.args.production = True
+        gitctl.command.gitctl_pending(self.args)
+        self.assertEquals('project.local................. OK', self.output[0])
+
+    def test_pending__production_advanced_over_pinned_versions(self):
+        self.args.production = True
+        
+        # Create a new gitexternals.cfg configuration that uses a pinned version
+        pinned = self.local.rev_parse('production').strip()
+        open(join(self.container, 'gitexternals.cfg'), 'w').write("""
+[project.local]
+url = %s
+container = %s
+type = git
+treeish = %s
+        """ % (self.upstream_path, self.container, pinned))
+        
+        # Commit a new change into the production branch
+        self.local.checkout('production')
+        open(join(self.local.git_dir, 'something.py'), 'w').write('import sha\n')
+        self.local.add('something.py')
+        self.local.commit('-m', 'Important')
+        
+        gitctl.command.gitctl_pending(self.args)
+        self.failUnless(self.output[0].startswith('project.local................. Branch ``production`` is 1 commit(s) ahead of the pinned down version at revision'))
+
+    def test_pending__staging_ok(self):
+        # By default all the branches are in-sync with each other
+        self.args.staging = True
+        gitctl.command.gitctl_pending(self.args)
+        self.assertEquals('project.local................. OK', self.output[0])
+
+    def test_pending__staging_advanced_over_production(self):
+        self.args.staging = True
+        
+        # Create a new commits in the staging branch
+        self.local.checkout('staging')
+        open(join(self.local.git_dir, 'something.py'), 'w').write('import sha\n')
+        self.local.add('something.py')
+        self.local.commit('-m', 'Important')
+        open(join(self.local.git_dir, 'other.py'), 'w').write('import md5\n')
+        self.local.add('other.py')
+        self.local.commit('-m', 'Monumental')
+        
+        # Assert that we notice the difference
+        gitctl.command.gitctl_pending(self.args)
+        self.assertEquals('project.local................. Branch ``staging`` is 2 commit(s) ahead of ``production``',
+                          self.output[0])
+
+    def test_pending__development_ok(self):
+        # By default all the branches are in-sync with each other
+        self.args.dev = True
+        gitctl.command.gitctl_pending(self.args)
+        self.assertEquals('project.local................. OK', self.output[0])
+
+    def test_pending__development_advanced_over_staging(self):
+        self.args.dev = True
+        
+        # Create a new commit in the development branch
+        self.local.checkout('development')
+        open(join(self.local.git_dir, 'something.py'), 'w').write('import sha\n')
+        self.local.add('something.py')
+        self.local.commit('-m', 'Important')
+        
+        # Assert that we notice the difference
+        gitctl.command.gitctl_pending(self.args)
+        self.assertEquals('project.local................. Branch ``development`` is 1 commit(s) ahead of ``staging``',
+                          self.output[0])
+
+    
+    def test_pending__show_config(self):
+        self.fail()
+    
+    def test_pending__diff(self):
         self.fail()
 
 class TestCommandStatus(CommandTestCase):
@@ -384,6 +575,8 @@ treeish = development
 def test_suite():
     return unittest.TestSuite([
             unittest.makeSuite(TestCommandStatus),
+            unittest.makeSuite(TestCommandPending),
+            unittest.makeSuite(TestCommandFetch),
             unittest.makeSuite(TestCommandUpdate),
             unittest.makeSuite(TestUtils),
             ])
