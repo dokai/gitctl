@@ -191,7 +191,7 @@ def gitctl_pending(args):
             else:
                 commits = len(repository.log('--pretty=oneline', '%s..%s' % (from_, to)).splitlines())
                 if args.production:
-                    LOG.info('%s Branch ``%s`` is %s commits ahead of pinned down versions at revision %s',
+                    LOG.info('%s Branch ``%s`` is %s commit(s) ahead of the pinned down version at revision %s',
                              gitctl.utils.pretty(proj['name']), config['production-branch'], commits, to)
                 else:
                     if args.staging:
@@ -201,7 +201,7 @@ def gitctl_pending(args):
                         b1 = config['development-branch']
                         b2 = config['staging-branch']
                         
-                    LOG.info('%s Branch ``%s`` is %s commits ahead of ``%s``',
+                    LOG.info('%s Branch ``%s`` is %s commit(s) ahead of ``%s``',
                              gitctl.utils.pretty(proj['name']), b1, commits, b2)
                     
                 if args.diff:
