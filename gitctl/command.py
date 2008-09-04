@@ -205,13 +205,13 @@ def gitctl_pending(args):
                              gitctl.utils.pretty(proj['name']), b1, commits, b2)
                     
                 if args.diff:
-                    print repository.log('--stat', '--summary', '-p', from_, to)
+                    LOG.info(repository.log('--stat', '--summary', '-p', from_, to))
         else:
             if not args.show_config:
                 LOG.info('%s OK', gitctl.utils.pretty(proj['name']))
         
     if args.show_config and args.production:
-        print gitctl.utils.generate_externals(projects)
+        LOG.info(gitctl.utils.generate_externals(projects))
 
 __all__ = ['gitctl_create', 'gitctl_fetch', 'gitctl_update', 'gitctl_status',
            'gitctl_pending',]
