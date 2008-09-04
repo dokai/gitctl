@@ -13,7 +13,7 @@ parser = argparse.ArgumentParser(
 # Global parameters
 parser.add_argument('--config', type=lambda x: [x],
     help='Location of the configuration file. If omitted the following '
-         'locations will be search: $PWD/gitctl.cfg, ~/gitctl.cfg.')
+         'locations will be search: $PWD/gitctl.cfg, ~/.gitctl.cfg.')
 parser.add_argument('--externals',
     help='Location of the externals configuration file. Defaults to '
          '$PWD/gitexternals.cfg')
