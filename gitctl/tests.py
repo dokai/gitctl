@@ -350,10 +350,48 @@ treeish = %s
 
     
     def test_pending__show_config(self):
-        self.fail()
+        self.args.production = True
+        self.args.show_config = True
+
+        # Create a new gitexternals.cfg configuration that uses a pinned version
+        pinned = self.local.rev_parse('production').strip()
+        open(join(self.container, 'gitexternals.cfg'), 'w').write("""
+[project.local]
+url = %s
+container = %s
+type = git
+treeish = %s
+        """ % (self.upstream_path, self.container, pinned))
+
+        # Commit a new change into the production branch
+        self.local.checkout('production')
+        open(join(self.local.git_dir, 'something.py'), 'w').write('import sha\n')
+        self.local.add('something.py')
+        self.local.commit('-m', 'Important')
+        # Get the SHA1 of the HEAD of production
+        head = self.local.rev_parse('production').strip()
+
+        
+        gitctl.command.gitctl_pending(self.args)
+        self.assertEquals(1, len(self.output))
+        self.failUnless(self.output[0].strip().endswith(head))
     
     def test_pending__diff(self):
-        self.fail()
+        self.args.dev = True
+        self.args.diff = True
+        
+        # Create a new commit in the development branch
+        self.local.checkout('development')
+        open(join(self.local.git_dir, 'something.py'), 'w').write('import sha\n')
+        self.local.add('something.py')
+        self.local.commit('-m', 'Important')
+        
+        # Assert that we notice the difference
+        gitctl.command.gitctl_pending(self.args)
+        self.assertEquals(2, len(self.output))
+        self.assertEquals('project.local................. Branch ``development`` is 1 commit(s) ahead of ``staging``',
+                          self.output[0])
+        self.failUnless('diff --git a/something.py b/something.py' in self.output[1])
 
 class TestCommandStatus(CommandTestCase):
     """Tests for the ``status`` command."""
