@@ -277,6 +277,36 @@ treeish = master
         gitctl.command.gitctl_pending(self.args)
         self.assertEquals('thirdparty.local.............. Skipping.', self.output[0])
 
+    def test_pending__remote_out_of_sync(self):
+        self.args.dev = True
+        
+        # Create a new commit in the development branch, but don't push it upstream.
+        self.local.checkout('development')
+        open(join(self.local.git_dir, 'something.py'), 'w').write('import sha\n')
+        self.local.add('something.py')
+        self.local.commit('-m', 'Important')
+        
+        # Assert that we notice that the remote is out-of-sync.
+        gitctl.command.gitctl_pending(self.args)
+        self.assertEquals('project.local................. Branch ``development`` out of sync with upstream. Run "gitcl update" or pull manually.',
+                          self.output[0])
+
+    def test_pending__dirty_working_directory(self):
+        self.args.dev = True
+        
+        # Create a new commit in the development branch and then modify the file
+        # without committing.
+        self.local.checkout('development')
+        open(join(self.local.git_dir, 'something.py'), 'w').write('import sha\n')
+        self.local.add('something.py')
+        self.local.commit('-m', 'Important')
+        open(join(self.local.git_dir, 'something.py'), 'a').write('s = sha.new()')
+
+        # Assert that we notice that the working directory is dirty
+        gitctl.command.gitctl_pending(self.args)
+        self.assertEquals('project.local................. Uncommitted local changes.',
+                          self.output[0])
+
     def test_pending__production_ok(self):
         # By default all the branches are in-sync with each other
         self.args.production = True
@@ -301,6 +331,7 @@ treeish = %s
         open(join(self.local.git_dir, 'something.py'), 'w').write('import sha\n')
         self.local.add('something.py')
         self.local.commit('-m', 'Important')
+        self.local.push()
         
         gitctl.command.gitctl_pending(self.args)
         self.failUnless(self.output[0].startswith('project.local................. Branch ``production`` is 1 commit(s) ahead of the pinned down version at revision'))
@@ -322,6 +353,7 @@ treeish = %s
         open(join(self.local.git_dir, 'other.py'), 'w').write('import md5\n')
         self.local.add('other.py')
         self.local.commit('-m', 'Monumental')
+        self.local.push()
         
         # Assert that we notice the difference
         gitctl.command.gitctl_pending(self.args)
@@ -342,6 +374,7 @@ treeish = %s
         open(join(self.local.git_dir, 'something.py'), 'w').write('import sha\n')
         self.local.add('something.py')
         self.local.commit('-m', 'Important')
+        self.local.push()
         
         # Assert that we notice the difference
         gitctl.command.gitctl_pending(self.args)
@@ -368,6 +401,7 @@ treeish = %s
         open(join(self.local.git_dir, 'something.py'), 'w').write('import sha\n')
         self.local.add('something.py')
         self.local.commit('-m', 'Important')
+        self.local.push()
         # Get the SHA1 of the HEAD of production
         head = self.local.rev_parse('production').strip()
 
@@ -385,6 +419,7 @@ treeish = %s
         open(join(self.local.git_dir, 'something.py'), 'w').write('import sha\n')
         self.local.add('something.py')
         self.local.commit('-m', 'Important')
+        self.local.push()
         
         # Assert that we notice the difference
         gitctl.command.gitctl_pending(self.args)

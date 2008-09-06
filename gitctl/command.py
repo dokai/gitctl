@@ -161,13 +161,34 @@ def gitctl_pending(args):
 
     for proj in projects:
         repository = git.Git(gitctl.utils.project_path(proj))
+        
         local_branches = set(repository.branch().split())
+        remote_branches = set(repository.branch('-r').split())
         
         if config['development-branch'] not in local_branches:
             # This looks to be a package that does not share our common repository layout
             # which is possible with 3rd party packages etc. We can safely ignore it.
             if not args.show_config:
                 LOG.info('%s Skipping.', gitctl.utils.pretty(proj['name']))
+            continue
+
+        # Check for dirty working directory
+        if gitctl.utils.is_dirty(repository):
+            LOG.info('%s Uncommitted local changes.', gitctl.utils.pretty(proj['name']))
+            continue
+        
+        # Update the remotes
+        repository.fetch(config['upstream'])
+
+        # Check for out-of-sync remote branches
+        skip_project = False
+        for remote, local in config['branches']:
+            if remote in remote_branches:
+                if len(repository.diff(remote, local).strip()) > 0:
+                    LOG.warning('%s Branch ``%s`` out of sync with upstream. Run "gitcl update" or pull manually.',
+                                gitctl.utils.pretty(proj['name']), local)
+                    skip_project = True
+        if skip_project:
             continue
         
         # Get actual versions of the trees to be compared.
