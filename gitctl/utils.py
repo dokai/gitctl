@@ -2,12 +2,16 @@
 """Common utilities for gitctl."""
 
 import os
+import sys
 import git
 import shlex
+import logging
 import subprocess
 
 from StringIO import StringIO
 from ConfigParser import SafeConfigParser
+
+LOG = logging.getLogger('gitctl')
 
 def pretty(name, justification=30, fill='.'):
     """Returns a left justified representation of ``name``."""
