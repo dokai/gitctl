@@ -13,7 +13,7 @@ from ConfigParser import SafeConfigParser
 
 LOG = logging.getLogger('gitctl')
 
-def pretty(name, justification=30, fill='.'):
+def pretty(name, justification=40, fill='.'):
     """Returns a left justified representation of ``name``."""
     return name.ljust(justification, fill)
 
