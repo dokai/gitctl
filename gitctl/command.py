@@ -88,6 +88,25 @@ def gitctl_fetch(args):
         repository.fetch(config['upstream'])
         LOG.info('%s Fetched', gitctl.utils.pretty(proj['name']))
 
+def gitctl_branch(args):
+    """Operates on the project branches."""
+    projects = gitctl.utils.parse_externals(args.externals)
+    config = gitctl.utils.parse_config(args.config)
+    
+    for proj in projects:
+        repository = git.Git(gitctl.utils.project_path(proj))
+        if not args.checkout and args.list:
+            LOG.info('%s %s' % (gitctl.utils.pretty(proj['name']),
+                                gitctl.utils.current_branch(repository)))
+        
+        if args.checkout:
+            if gitctl.utils.is_dirty(repository):
+                LOG.info('%s Dirty working directory. Please commit or stash and try again.' % gitctl.utils.pretty(proj['name']))
+            else:
+                # TODO: Validate the existence of the branch
+                repository.checkout(args.checkout)
+                LOG.info('%s Checked out ``%s``' % (gitctl.utils.pretty(proj['name']), args.checkout))
+
 def gitctl_update(args):
     """Updates the external projects.
     

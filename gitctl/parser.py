@@ -56,6 +56,18 @@ parser_status.set_defaults(
     func=gitctl.command.gitctl_status,
     no_fetch=False)
 
+parser_branch = cmd_parsers.add_parser('branch',
+    help='Provides information and operates on the branches of the projects.')
+parser_branch.add_argument('--list', action='store_true',
+    help='Lists the currently checked out branches of each project. '
+         'This is the default action')
+parser_branch.add_argument('--checkout', metavar='BRANCH', nargs=1,
+    help='Attempts to switch each project to the given branch. The project '
+         'working directory must be clean or otherwise a warning will be issued.')
+parser_branch.set_defaults(
+    func=gitctl.command.gitctl_branch,
+    list=True)
+
 # 'gitctl pending'
 parser_pending = cmd_parsers.add_parser('pending',
     help='Checks if there are any pending changes between two consecutive states '
