@@ -22,27 +22,28 @@ def gitctl_create(args):
     project_url = '%s:%s.git' % (config['upstream-url'], project_name)
 
     # Make sure that the remote repository does not exist already.
-    retcode = gitctl.utils.run('ssh %s "test ! -d %s.git"' % (config['upstream-url'], project_name))
+    retcode = gitctl.utils.run('ssh %s test ! -d %s.git' % (config['upstream-url'], project_name))
     if retcode != 0:
         LOG.error('Remote repository ``%s`` already exists. Aborting.', project_url)
         sys.exit(1)
     
     # Set up the remote bare repository
-    initialize_remote = (
-        'ssh', config['upstream-url'],
-        'mkdir -p %(project)s.git && '
-        'cd %(project)s.git && '
-        'git --bare init && '
-        'echo %(project)s > description && '
-        'echo \'. /usr/share/doc/git-core/contrib/hooks/post-receive-email\' > hooks/post-receive && '
-        'chmod a+x hooks/post-receive && '
-        'git config hooks.mailinglist %(commit_email)s && '
-        'git config hooks.emailprefix "%(commit_email_prefix)s "' % {
+    initialize_remote = """\
+    ssh %(upstream)s
+    "mkdir -p %(project)s.git && 
+     cd %(project)s.git && 
+     git --bare init && 
+     echo %(project)s > description && 
+     echo '. /usr/share/doc/git-core/contrib/hooks/post-receive-email' > hooks/post-receive &&
+     chmod a+x hooks/post-receive && 
+     git config hooks.mailinglist %(commit_email)s && 
+     git config hooks.emailprefix \\"%(commit_email_prefix)s \\""
+    """ % { 'upstream' : config['upstream-url'],
             'project' : project_name,
             'commit_email' : config['commit-email'],
-            'commit_email_prefix' : config['commit-email-prefix'] },
-        )
-    gitctl.utils.run(initialize_remote)
+            'commit_email_prefix' : config['commit-email-prefix'] }
+    
+    gitctl.utils.run(' '.join([l.strip() for l in initialize_remote.splitlines()]))
     LOG.info('Created new remote repository: %s', project_url)
     
     # Initialize the local directory.

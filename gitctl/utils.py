@@ -44,10 +44,10 @@ def run(command, cwd=None):
         lexer.whitespace_split = True
         command = list(lexer)
 
-    pipe = subprocess.Popen(command, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    retcode = pipe.wait()
-    
-    return retcode, pipe.stdout.read(), pipe.stderr.read()
+    #pipe = subprocess.Popen(command, shell=True, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    #retcode = pipe.wait()    
+    #return retcode, pipe.stdout.read(), pipe.stderr.read()
+    return subprocess.call(' '.join(command), shell=True, cwd=cwd)
 
 def parse_config(configs):
     """Parses the gitctl config file."""
