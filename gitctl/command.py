@@ -97,7 +97,7 @@ def gitctl_branch(args):
         repository = git.Repo(gitctl.utils.project_path(proj))
         if not args.checkout and args.list:
             LOG.info('%s %s' % (gitctl.utils.pretty(proj['name']),
-                                gitctl.utils.current_branch(repository)))
+                                repository.active_branch))
         
         if args.checkout:
             branch = args.checkout[0]
@@ -106,7 +106,9 @@ def gitctl_branch(args):
             else:
                 branches = set([b.name for b in repository.branches])
                 if branch not in branches:
-                    LOG.warning('%s No such branch: %s' % (gitctl.utils.pretty(proj['name']), branch))
+                    LOG.warning('%s No such branch: ``%s``' % (gitctl.utils.pretty(proj['name']), branch))
+                elif branch == repository.active_branch:
+                    LOG.info('%s Already at ``%s``' % (gitctl.utils.pretty(proj['name']), branch))
                 else:
                     repository.git.checkout(branch)
                     LOG.info('%s Checked out ``%s``' % (gitctl.utils.pretty(proj['name']), branch))
