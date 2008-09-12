@@ -94,18 +94,22 @@ def gitctl_branch(args):
     config = gitctl.utils.parse_config(args.config)
     
     for proj in projects:
-        repository = git.Git(gitctl.utils.project_path(proj))
+        repository = git.Repo(gitctl.utils.project_path(proj))
         if not args.checkout and args.list:
             LOG.info('%s %s' % (gitctl.utils.pretty(proj['name']),
                                 gitctl.utils.current_branch(repository)))
         
         if args.checkout:
-            if gitctl.utils.is_dirty(repository):
+            branch = args.checkout[0]
+            if repository.is_dirty:
                 LOG.info('%s Dirty working directory. Please commit or stash and try again.' % gitctl.utils.pretty(proj['name']))
             else:
-                # TODO: Validate the existence of the branch
-                repository.checkout(args.checkout)
-                LOG.info('%s Checked out ``%s``' % (gitctl.utils.pretty(proj['name']), args.checkout))
+                branches = set([b.name for b in repository.branches])
+                if branch not in branches:
+                    LOG.warning('%s No such branch: %s' % (gitctl.utils.pretty(proj['name']), branch))
+                else:
+                    repository.git.checkout(branch)
+                    LOG.info('%s Checked out ``%s``' % (gitctl.utils.pretty(proj['name']), branch))
 
 def gitctl_update(args):
     """Updates the external projects.
@@ -119,16 +123,16 @@ def gitctl_update(args):
     for proj in projects:
         path = gitctl.utils.project_path(proj)
         if os.path.exists(path):
-            repository = git.Git(path)
-            if gitctl.utils.is_dirty(repository):
+            repository = git.Repo(path)
+            if repository.is_dirty:
                 LOG.warning('%s Dirty working directory. Please commit or stash and try again.', gitctl.utils.pretty(proj['name']))
                 continue
 
             if args.rebase:
-                repository.pull('--rebase')
+                repository.git.pull('--rebase')
                 LOG.info('%s Rebased', gitctl.utils.pretty(proj['name']))
             else:
-                repository.pull()
+                repository.git.pull()
                 LOG.info('%s Pulled', gitctl.utils.pretty(proj['name']))
         else:
             # Clone the repository
@@ -157,7 +161,7 @@ def gitctl_status(args):
             # Fetch upstream
             repository.git.fetch(config['upstream'])
 
-        if gitctl.utils.is_dirty(repository):
+        if repository.is_dirty:
             LOG.info('%s Uncommitted local changes', gitctl.utils.pretty(proj['name']))
             continue
             
@@ -180,10 +184,10 @@ def gitctl_pending(args):
     config = gitctl.utils.parse_config(args.config)
 
     for proj in projects:
-        repository = git.Git(gitctl.utils.project_path(proj))
+        repository = git.Repo(gitctl.utils.project_path(proj))
         
-        local_branches = set(repository.branch().split())
-        remote_branches = set(repository.branch('-r').split())
+        local_branches = set(repository.git.branch().split())
+        remote_branches = set(repository.git.branch('-r').split())
         
         if config['development-branch'] not in local_branches:
             # This looks to be a package that does not share our common repository layout
@@ -193,18 +197,18 @@ def gitctl_pending(args):
             continue
 
         # Check for dirty working directory
-        if gitctl.utils.is_dirty(repository):
+        if repository.is_dirty:
             LOG.info('%s Uncommitted local changes.', gitctl.utils.pretty(proj['name']))
             continue
         
         # Update the remotes
-        repository.fetch(config['upstream'])
+        repository.git.fetch(config['upstream'])
 
         # Check for out-of-sync remote branches
         skip_project = False
         for remote, local in config['branches']:
             if remote in remote_branches:
-                if len(repository.diff(remote, local).strip()) > 0:
+                if len(repository.git.diff(remote, local).strip()) > 0:
                     LOG.warning('%s Branch ``%s`` out of sync with upstream. Run "gitcl update" or pull manually.',
                                 gitctl.utils.pretty(proj['name']), local)
                     skip_project = True
@@ -215,14 +219,14 @@ def gitctl_pending(args):
         if args.production:
             # Compare the the pinned down version against the HEAD of the
             # production branch
-            from_ = repository.rev_parse(proj['treeish'])
-            to = repository.rev_parse(config['production-branch'])
+            from_ = repository.git.rev_parse(proj['treeish'])
+            to = repository.git.rev_parse(config['production-branch'])
         elif args.staging:
-            from_ = repository.rev_parse(config['production-branch'])
-            to = repository.rev_parse(config['staging-branch'])
+            from_ = repository.git.rev_parse(config['production-branch'])
+            to = repository.git.rev_parse(config['staging-branch'])
         elif args.dev:
-            from_ = repository.rev_parse(config['staging-branch'])
-            to = repository.rev_parse(config['development-branch'])
+            from_ = repository.git.rev_parse(config['staging-branch'])
+            to = repository.git.rev_parse(config['development-branch'])
         
         if from_ != to:
             # The comparison branch has advanced.
@@ -230,7 +234,7 @@ def gitctl_pending(args):
                 # Update the treeish to the latest version in the comparison branch.
                 proj['treeish'] = to
             else:
-                commits = len(repository.log('--pretty=oneline', '%s..%s' % (from_, to)).splitlines())
+                commits = len(repository.git.log('--pretty=oneline', '%s..%s' % (from_, to)).splitlines())
                 if args.production:
                     LOG.info('%s Branch ``%s`` is %s commit(s) ahead of the pinned down version at revision %s',
                              gitctl.utils.pretty(proj['name']), config['production-branch'], commits, to)
@@ -246,7 +250,7 @@ def gitctl_pending(args):
                              gitctl.utils.pretty(proj['name']), b1, commits, b2)
                     
                 if args.diff:
-                    LOG.info(repository.log('--stat', '--summary', '-p', from_, to))
+                    LOG.info(repository.git.log('--stat', '--summary', '-p', from_, to))
         else:
             if not args.show_config:
                 LOG.info('%s OK', gitctl.utils.pretty(proj['name']))
