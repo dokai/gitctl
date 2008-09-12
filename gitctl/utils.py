@@ -28,19 +28,6 @@ def project_path(proj, relative=False):
         path = path[prefix_len:]
     return path
 
-def current_branch(repository):
-    """Returns the name of the current branch"""
-    g = isinstance(repository, git.Git) and repository or repository.git
-    return [b[2:] for b in g.branch().splitlines() if b.startswith('* ')][0]
-
-def is_dirty(repository):
-    """Returns True if the given repository has uncommited changes either in
-    the working directory or the index.
-    """
-    g = isinstance(repository, git.Git) and repository or repository.git
-    return len(g.diff().strip()) > 0 or \
-           len(g.diff('--cached').strip()) > 0
-
 def run(command, cwd=None):
     """Executes the given command."""
     if hasattr(command, 'startswith'):
