@@ -92,7 +92,7 @@ treeish = development
     def tearDown(self):
         shutil.rmtree(self.container)
         
-    def clone_upstream(self, name):
+    def clone_upstream(self, name, as_repo=False):
         """Clones the upstream repository and returns a git.Git object bound
         to the new clone.
         """
@@ -100,11 +100,82 @@ treeish = development
         temp = git.Git(self.container)
         temp.clone(self.upstream_path, path)
         
-        clone = git.Git(path)
-        clone.branch('-f', '--track', 'production', 'origin/production')
-        clone.branch('-f', '--track', 'staging', 'origin/staging')
+        clone = git.Repo(path)
+        clone.git.branch('-f', '--track', 'production', 'origin/production')
+        clone.git.branch('-f', '--track', 'staging', 'origin/staging')
         
-        return clone
+        if as_repo:
+            return clone
+        else:
+            return clone.git
+
+class TestCommandBranch(CommandTestCase):
+    """Tests for the ``branch`` command."""
+
+    def setUp(self):
+        super(self.__class__, self).setUp()
+        
+        self.local = self.clone_upstream('project.local', as_repo=True)
+        
+        # Mock some command line arguments
+        self.args = mock.Mock()
+        self.args.config = os.path.join(self.container, 'gitctl.cfg')
+        self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
+
+    
+    def test_branch__list(self):
+        self.args.list = True
+        self.args.checkout = False
+        
+        gitctl.command.gitctl_branch(self.args)
+        self.assertEquals(1, len(self.output))
+        self.assertEquals('project.local........................... development', self.output[0])
+    
+    def test_branch__checkout_with_dirty_working_directory(self):
+        self.args.list = False
+        self.args.checkout = ['development']
+        
+        # Make the working directory dirty.
+        self.local.git.checkout('development')
+        open(join(self.local.git.git_dir, 'something.py'), 'w').write('import sha\n')
+        self.local.git.add('something.py')
+        
+        self.failUnless(self.local.is_dirty)
+        gitctl.command.gitctl_branch(self.args)
+        self.assertEquals(1, len(self.output))
+        self.assertEquals('project.local........................... Dirty working directory. Please commit or stash and try again.', self.output[0])
+    
+    def test_branch__checkout_with_same_target_branch(self):
+        self.args.list = False
+        self.args.checkout = ['development']
+        
+        self.local.git.checkout('development')
+        self.assertEquals(self.local.active_branch, 'development')
+
+        gitctl.command.gitctl_branch(self.args)
+        self.assertEquals(1, len(self.output))
+        self.assertEquals('project.local........................... Already at ``development``', self.output[0])
+    
+    def test_branch__checkout_with_nonexisting_branch(self):
+        self.args.list = False
+        self.args.checkout = ['non-existing-branch']
+        
+        self.assertEquals(self.local.active_branch, 'development')
+        gitctl.command.gitctl_branch(self.args)
+        self.assertEquals(1, len(self.output))
+        self.assertEquals('project.local........................... No such branch: ``non-existing-branch``', self.output[0])
+    
+    def test_branch__checkout_success(self):
+        self.args.list = False
+        self.args.checkout = ['staging']
+        
+        self.local.git.checkout('development')
+        self.assertEquals(self.local.active_branch, 'development')
+
+        gitctl.command.gitctl_branch(self.args)
+        self.assertEquals('staging', self.local.active_branch)
+        self.assertEquals(1, len(self.output))
+        self.assertEquals('project.local........................... Checked out ``staging``', self.output[0])
 
 class TestCommandUpdate(CommandTestCase):
     """Tests for the ``update`` command."""
@@ -505,36 +576,6 @@ class TestUtils(unittest.TestCase):
         self.assertEquals('foo/bar', gitctl.utils.project_path(proj1, relative=True))
         self.assertEquals('foo/bar/froobnoz', gitctl.utils.project_path(proj2, relative=True))
 
-    def test_is_dirty__clean(self):
-        repo = git.Git(self.path)
-        repo.init()
-        open(os.path.join(self.path, 'foobar.txt'), 'w').write('Lorem lipsum')
-        repo.add('foobar.txt')
-        repo.commit('-m "dummy"')
-        
-        self.failIf(gitctl.utils.is_dirty(repo))
-    
-    def test_is_dirty__dirty_working_directory(self):
-        repo = git.Git(self.path)
-        repo.init()
-        open(os.path.join(self.path, 'foobar.txt'), 'w').write('Lorem lipsum')
-        repo.add('foobar.txt')
-        repo.commit('-m "dummy"')
-        open(os.path.join(self.path, 'foobar.txt'), 'w').write('Lipsum lorem')
-        
-        self.failUnless(gitctl.utils.is_dirty(repo))
-        
-    def test_is_dirty__dirty_index(self):
-        repo = git.Git(self.path)
-        repo.init()
-        open(os.path.join(self.path, 'foobar.txt'), 'w').write('Lorem lipsum')
-        repo.add('foobar.txt')
-        repo.commit('-m "dummy"')
-        open(os.path.join(self.path, 'foobar.txt'), 'w').write('Lipsum lorem')
-        repo.add('foobar.txt')
-
-        self.failUnless(gitctl.utils.is_dirty(repo))
-
     def test_parse_config__invalid_file(self):
         self.assertRaises(ValueError, lambda: gitctl.utils.parse_config(['/non/existing/path']))
     
@@ -651,5 +692,6 @@ def test_suite():
             unittest.makeSuite(TestCommandPending),
             unittest.makeSuite(TestCommandFetch),
             unittest.makeSuite(TestCommandUpdate),
+            unittest.makeSuite(TestCommandBranch),
             unittest.makeSuite(TestUtils),
             ])
