@@ -39,11 +39,11 @@ parser_update = cmd_parsers.add_parser('update',
 parser_update.add_argument('project', nargs='*',
     help='Name of a project to update. If omitted all projects in the '
          'externals configuration will be updated.')
-parser_update.add_argument('--rebase', action='store_true',
-    help='Rebase instead of merging after fetching the changes.')
+parser_update.add_argument('--merge', action='store_true',
+    help='Merge instead of rebasing after fetching the changes.')
 parser_update.set_defaults(
     func=gitctl.command.gitctl_update,
-    rebase=False)
+    merge=False)
 
 # 'gitctl status'
 parser_status = cmd_parsers.add_parser('status',

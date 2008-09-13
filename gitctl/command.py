@@ -130,12 +130,12 @@ def gitctl_update(args):
                 LOG.warning('%s Dirty working directory. Please commit or stash and try again.', gitctl.utils.pretty(proj['name']))
                 continue
 
-            if args.rebase:
-                repository.git.pull('--rebase')
-                LOG.info('%s Rebased', gitctl.utils.pretty(proj['name']))
-            else:
+            if args.merge:
                 repository.git.pull()
                 LOG.info('%s Pulled', gitctl.utils.pretty(proj['name']))
+            else:
+                repository.git.pull('--rebase')
+                LOG.info('%s Rebased', gitctl.utils.pretty(proj['name']))
         else:
             # Clone the repository
             temp = git.Git('/tmp')

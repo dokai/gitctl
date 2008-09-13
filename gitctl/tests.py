@@ -205,7 +205,7 @@ class TestCommandUpdate(CommandTestCase):
         self.args = mock.Mock()
         self.args.config = os.path.join(self.container, 'gitctl.cfg')
         self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
-        self.args.rebase = False
+        self.args.merge = True
 
         local_path = join(self.container, 'project.local')
         local = git.Git(local_path)
@@ -239,7 +239,7 @@ class TestCommandUpdate(CommandTestCase):
         self.args = mock.Mock()
         self.args.config = os.path.join(self.container, 'gitctl.cfg')
         self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
-        self.args.rebase = True
+        self.args.merge = False
 
         local_path = join(self.container, 'project.local')
         local = git.Git(local_path)
