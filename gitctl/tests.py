@@ -633,28 +633,28 @@ treeish = master
         """.strip())
         projects = gitctl.utils.parse_externals(ext)
         self.assertEquals([{'container': 'src',
-                            'name': 'your.project',
-                            'treeish': 'master',
-                            'type': 'git',
-                            'url': 'git@github.com:dokai/your-project'},
-                           {'container': 'src',
                             'name': 'my.project',
                             'treeish': 'development',
                             'type': 'git',
-                            'url': 'git@github.com:dokai/my-project'}],
+                            'url': 'git@github.com:dokai/my-project'},
+                           {'container': 'src',
+                            'name': 'your.project',
+                            'treeish': 'master',
+                            'type': 'git',
+                            'url': 'git@github.com:dokai/your-project'}],
                            projects)
 
     def test_generate_externals(self):
         projects = [{'container': 'src',
-                     'name': 'your.project',
-                     'treeish': 'master',
-                     'type': 'git',
-                     'url': 'git@github.com:dokai/your-project'},
-                    {'container': 'src',
                      'name': 'my.project',
                      'treeish': 'development',
                      'type': 'git',
-                     'url': 'git@github.com:dokai/my-project'}]
+                     'url': 'git@github.com:dokai/my-project'},
+                    {'container': 'src',
+                     'name': 'your.project',
+                     'treeish': 'master',
+                     'type': 'git',
+                     'url': 'git@github.com:dokai/your-project'}]
         self.assertEquals("""
 [your.project]
 url = git@github.com:dokai/your-project
@@ -671,15 +671,15 @@ treeish = development
     
     def test_externals_roundtrip(self):
         projects = [{'container': 'src',
-                     'name': 'your.project',
-                     'treeish': 'master',
-                     'type': 'git',
-                     'url': 'git@github.com:dokai/your-project'},
-                    {'container': 'src',
                      'name': 'my.project',
                      'treeish': 'development',
                      'type': 'git',
-                     'url': 'git@github.com:dokai/my-project'}]
+                     'url': 'git@github.com:dokai/my-project'},
+                     {'container': 'src',
+                     'name': 'your.project',
+                     'treeish': 'master',
+                     'type': 'git',
+                     'url': 'git@github.com:dokai/your-project'}]
 
         ext = os.path.join(self.path, 'gitexternals.cfg')
         open(ext, 'w').write(gitctl.utils.generate_externals(copy.deepcopy(projects)))

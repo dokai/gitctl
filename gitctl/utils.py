@@ -8,6 +8,7 @@ import shlex
 import logging
 import subprocess
 
+from operator import itemgetter
 from StringIO import StringIO
 from ConfigParser import SafeConfigParser
 
@@ -97,7 +98,8 @@ def parse_externals(config):
 
         projects.append(proj)
     
-    return projects
+    
+    return sorted(projects, key=itemgetter('name'))
 
 def generate_externals(projects):
     """Generates an externals configuration file."""
