@@ -3,3 +3,4 @@ bin
 develop-eggs
 gitctl.egg-info
 src
+parts
