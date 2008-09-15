@@ -130,7 +130,14 @@ def gitctl_update(args):
                 LOG.warning('%s Dirty working directory. Please commit or stash and try again.', gitctl.utils.pretty(proj['name']))
                 continue
 
-            if args.merge:
+            if gitctl.utils.is_sha1(proj['treeish']):
+                # In case the treeish is a full SHA1 checksum it means that we're using a
+                # pinned down version and pulling doesn't make sense. In that case we simply
+                # fetch and checkout the given treeish.
+                repository.git.fetch()
+                repository.git.checkout(proj['treeish'])
+                LOG.info('%s Checked out revision ``%s``', gitctl.utils.pretty(proj['name']), proj['treeish'])
+            elif args.merge:
                 repository.git.pull()
                 LOG.info('%s Pulled', gitctl.utils.pretty(proj['name']))
             else:

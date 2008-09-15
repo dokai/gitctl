@@ -8,6 +8,12 @@ Project page: http://github.com/dokai/gitctl
 Change history
 **************
 
+2.0a2 (2008-09-15)
+==================
+
+ - Fixed a critical bug with 'gitctl update' when using pinned down revisions.
+   [dokai]
+
 2.0a1 (2008-09-15)
 ==================
 

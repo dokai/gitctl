@@ -233,6 +233,63 @@ class TestCommandUpdate(CommandTestCase):
         log = local.log('--pretty=oneline').splitlines()
         self.assertEquals(2, len(log))
         self.failUnless(log[0].endswith('Second commit'))
+
+
+    def test_update__fetch_checkout(self):
+        # Mock some command line arguments
+        self.args = mock.Mock()
+        self.args.config = os.path.join(self.container, 'gitctl.cfg')
+        self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
+        self.args.merge = True
+
+        # Get the SHA1 checksum for the current head and pin the externals to it.
+        sha1_first = self.upstream.rev_parse('HEAD').strip()
+        open(os.path.join(self.container, 'gitexternals.cfg'), 'w').write("""
+[project.local]
+url = %s
+container = %s
+type = git
+treeish = %s
+                """.strip() % (self.upstream_path, self.container, sha1_first))
+        
+        local_path = join(self.container, 'project.local')
+        local = git.Git(local_path)
+
+        # Run update once to clone the project
+        gitctl.command.gitctl_update(self.args)
+        self.failUnless(os.path.exists(local_path))
+        # Assert that is has the initial commit only
+        log = local.log('--pretty=oneline').splitlines()
+        self.assertEquals(1, len(log))
+        self.failUnless(log[0].endswith('Initial commit'))
+
+        # Create a parallel clone, commit some changes and push them upstream
+        another = self.clone_upstream('another')
+        open(os.path.join(another.git_dir, 'random_addition.txt'), 'w').write('Foobar')
+        another.add('random_addition.txt')
+        another.commit('-m', 'Second commit')
+        another.push()
+
+        # Get the SHA1 of the new HEAD and update the externals again.
+        sha1_second = self.upstream.rev_parse('HEAD').strip()
+        open(os.path.join(self.container, 'gitexternals.cfg'), 'w').write("""
+[project.local]
+url = %s
+container = %s
+type = git
+treeish = %s
+                """.strip() % (self.upstream_path, self.container, sha1_second))
+        
+        # Run update again and assert we got back the changes
+        gitctl.command.gitctl_update(self.args)
+        self.assertEquals(['project.local........................... Cloned and checked out ``%s``' % sha1_first,
+                           'project.local........................... Checked out revision ``%s``' % sha1_second],
+                          self.output)
+        log = local.log('--pretty=oneline').splitlines()
+        self.assertEquals(2, len(log))
+        self.failUnless(log[0].endswith('Second commit'))
+        self.assertEquals(sha1_second, local.rev_parse('HEAD').strip())
+
     
     def test_update__rebase(self):
         # Mock some command line arguments
@@ -575,6 +632,18 @@ class TestUtils(unittest.TestCase):
 
         self.assertEquals('foo/bar', gitctl.utils.project_path(proj1, relative=True))
         self.assertEquals('foo/bar/froobnoz', gitctl.utils.project_path(proj2, relative=True))
+
+    def test_is_sha1_too_short(self):
+        self.failIf(gitctl.utils.is_sha1('123456790abcdef'))
+
+    def test_is_sha1_too_long(self):
+        self.failIf(gitctl.utils.is_sha1('123456790abcdef123456790abcdef123456790abcdef123456790abcdef'))
+
+    def test_is_sha1_valid(self):
+        self.failUnless(gitctl.utils.is_sha1('1234567890abcdef1234567890abcdef12345678'))
+
+    def test_is_sha1_invalid(self):
+        self.failIf(gitctl.utils.is_sha1('12345678ghijkl1234567890abcdef12345678'))
 
     def test_parse_config__invalid_file(self):
         self.assertRaises(ValueError, lambda: gitctl.utils.parse_config(['/non/existing/path']))

@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 """Common utilities for gitctl."""
 
+import re
 import os
 import sys
 import git
@@ -13,6 +14,13 @@ from StringIO import StringIO
 from ConfigParser import SafeConfigParser
 
 LOG = logging.getLogger('gitctl')
+RE_SHA1_CHECKSUM = re.compile(r'^[a-fA-F0-9]{40}$')
+
+def is_sha1(treeish):
+    """Returns True if the given treeish looks like a SHA1 sum, False
+    otherwise
+    """
+    return RE_SHA1_CHECKSUM.match(treeish) is not None
 
 def pretty(name, justification=40, fill='.'):
     """Returns a left justified representation of ``name``."""

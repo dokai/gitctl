@@ -5,7 +5,7 @@ import os.path
 def read(*rnames):
     return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
 
-version = '2.0a1'
+version = '2.0a2'
 
 setup(name='gitctl',
       version=version,
