@@ -94,8 +94,31 @@ gitctl.cfg
 
     Name of the production branch. The above ``branches`` listing will be made
     to implicitly contain this branch.
+    
+``commit-email``
+
+    Email address where commit emails will be sent. Only used when creating
+    new repositories.
+
+``commit-email-prefix``
+
+    The commit email prefix. Only used when creating new repositories.
 
 
+An example configuration follows::
+
+  [gitctl]
+  upstream = origin
+  upstream-url = git@myserver.com
+  branches =
+      development
+      staging
+      production
+  development-branch = development
+  staging-branch = staging
+  production-branch = production
+  commit-email = commit@myserver.com
+  commit-email-prefix = [GIT]
 
 ``gitexternals.cfg``
 ********************
