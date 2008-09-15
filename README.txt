@@ -1,13 +1,17 @@
 .. contents::
+  
+  .
 
 Git clone URL: git://github.com/dokai/gitctl.git
 
 Project page: http://github.com/dokai/gitctl
 
+
 Change history
 **************
 
 2.0a1 (XXXX-XX-XX)
+==================
 
  - Complete overhaul to implement (a particular) Git workflow process in
    addition to custom externals handling. This breaks backward compatibility
@@ -140,38 +144,39 @@ directory.
 
 The ``gitctl`` script provides subcommands to implement the workflow. Each
 subcommand provides additional options. See ``gitctl [subcommand] --help`` for
-details.
+details::
 
-usage: gitctl [-h] [--config CONFIG] [--externals EXTERNALS]
-{status,create,update,branch,fetch,pending} ...
 
-Git workflow utility for managing projects containing multiple git
-repositories.
+  usage: gitctl [-h] [--config CONFIG] [--externals EXTERNALS]
+  {status,create,update,branch,fetch,pending} ...
 
-positional arguments:
-  {status,create,update,branch,fetch,pending}
-                        Commands
-    create              Initializes a new local repository and creates a
-                        matching upstream repository.
-    update              Updates the configured repositories by either pulling
-                        existing ones or cloning new ones.
-    status              Shows the status of each external project and alerts
-                        if any are out of sync with the upstream repository.
-    branch              Provides information and operates on the branches of
-                        the projects.
-    pending             Checks if there are any pending changes between two
-                        consecutive states in the workflow.
-    fetch               Updates the remote branches on all projects without
-                        merging.
+  Git workflow utility for managing projects containing multiple git
+  repositories.
 
-optional arguments:
-  -h, --help            show this help message and exit
-  --config CONFIG       Location of the configuration file. If omitted the
-                        following locations will be search: $PWD/gitctl.cfg,
-                        ~/.gitctl.cfg.
-  --externals EXTERNALS
-                        Location of the externals configuration file. Defaults
-                        to $PWD/gitexternals.cfg
+  positional arguments:
+    {status,create,update,branch,fetch,pending}
+                          Commands
+      create              Initializes a new local repository and creates a
+                          matching upstream repository.
+      update              Updates the configured repositories by either pulling
+                          existing ones or cloning new ones.
+      status              Shows the status of each external project and alerts
+                          if any are out of sync with the upstream repository.
+      branch              Provides information and operates on the branches of
+                          the projects.
+      pending             Checks if there are any pending changes between two
+                          consecutive states in the workflow.
+      fetch               Updates the remote branches on all projects without
+                          merging.
+
+  optional arguments:
+    -h, --help            show this help message and exit
+    --config CONFIG       Location of the configuration file. If omitted the
+                          following locations will be search: $PWD/gitctl.cfg,
+                          ~/.gitctl.cfg.
+    --externals EXTERNALS
+                          Location of the externals configuration file. Defaults
+                          to $PWD/gitexternals.cfg
 
 
 
