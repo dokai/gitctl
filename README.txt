@@ -7,6 +7,13 @@ Project page: http://github.com/dokai/gitctl
 Change history
 **************
 
+2.0a1 (XXXX-XX-XX)
+
+ - Complete overhaul to implement (a particular) Git workflow process in
+   addition to custom externals handling. This breaks backward compatibility
+   with the 1.x version but provides somewhat equivalent functionality.
+   [dokai]
+
 1.0b1 (2008-06-12)
 ==================
 
@@ -16,150 +23,157 @@ Change history
 Purpose
 *******
 
-The purpose of this package is to facilitate a workflow similar to a
-one that can be achieved using the `svn:externals`_ property in
-Subversion when using Git to manage the source code of multiple
-projects.
+The purpose of this package is to implement a particular workflow for using
+Git to manage a project that consists of multiple independent subprojects. The
+original motivation is a zc.buildout driven system, but the implementation is
+not dependent on this. This is not a 100% generic tool, but the workflow is
+fairly common so it may be adaptable for other use cases also.
 
-The ``svn:externals`` property allows one part of a Subversion
-repository to depend on other parts (or other repositories) so that
-when checked out the dependent parts will be checked out also. Also,
-updating the main checkout will update all the dependent
-checkouts. Externals are often used to put together a composite
-application which consists of multiple independent parts.
+The workflow consists of using three pre-defined branches to model the
+``development``, ``staging`` and ``production`` phases of code. We assume the
+use of a canonical central repository that developers use to sync their
+official changes. This repository is considered to be the canonical source and
+provides the "official" state of the projects. Developers are free to use any
+number of branches, tags and repositories as part of their daily work.
 
-The package provides a single script -- ``gitctl`` -- which reads in a
-configuration file and performs the appropriate clone / pull
-operations on the repositories defined in it. For new repositories it
-clones the remote repository and checks out the chosen branch in the
-working directory. Subsequent script calls will pull in (with
---rebase) changes from the remote repository.
+The code normally flows from ``development`` to ``staging`` to ``production``
+and the package provides tools to facilitate this process. Each individual Git
+repository is managed using any of the tools that Git provides.
 
-Also remote Subversion repositories are supported which will be cloned
-and updated using ``git-svn``. This is useful if your composite
-project consists of components that are hosted on Subversion
-repositories.
+In addition, the package provides a light-weight "externals" mechanism for
+easily pulling in and managing the subprojects. This differs from the
+functionality provided by ``git-submodule`` in that both pinned-down and open
+dependencies can be defined. This resembles the way externals are handled in
+Subversion. Also, the individual Git repositories are not aware of the
+externals.
 
-.. _`svn:externals`: http://svnbook.red-bean.com/en/1.4/svn.advanced.externals.html
 
-Configuration file
-******************
+Configuration
+*************
 
-The configuration file is a simple INI-style text file which contains
-a section per remote repository. Supported options are:
+The package uses two different configuration files. The ``gitctl.cfg`` file
+provides the higher level configuration and allows you to specify things like
+the canonical repository and the names of your ``development``, ``staging``
+and ``production`` branches. The ``gitexternals.cfg`` defines your project
+specific configuration of required sub-components.
+
+gitctl.cfg
+**********
+
+``upstream``
+
+    The name used to refer to the canonical repository server, e.g. "origin".
+
+``upstream-url``
+
+    The address of the canonical repository server. This address needs to
+    point to the server in a manner that supports pushing. Currently only SSH
+    is tested. Example: git@my.gitserver.com
+
+``branches``
+
+    List of newline separated branches that will be tracked in the local
+    repository. When the repositories are clone for each branch listed here a
+    local tracking branch will be automatically created.
+
+``development-branch``
+
+    Name of the development branch. The above ``branches`` listing will be
+    made to implicitly contain this branch.
+
+``staging-branch``
+
+    Name of the staging branch. The above ``branches`` listing will be made to
+    implicitly contain this branch.
+
+``production-branch``
+
+    Name of the production branch. The above ``branches`` listing will be made
+    to implicitly contain this branch.
+
+
+
+``gitexternals.cfg``
+********************
+
+The externals configuration consists of one or more sections that have the
+following properties. Each section name will be used to name the directory
+where the external will be cloned into.
 
 ``url`` (mandatory)
 
-    Full URL to the remote repository. For Subversion repositories you
-    should give the URL to the directory that contains the standard
-    ``trunk/tags/branches`` structure. For non-standard layouts or
-    single branch checkouts see the Subversion specific options
-    ``svn-*`` below.
+    Full URL to the remote repository, e.g git@myserver.com:my.project.git
 
 ``type`` (optional)
 
-    The type of the remote repository. Valid values are ``git`` and
-    ``svn``. Defaults to ``git``.
+    The type of the remote repository. Currently only ``git`` is supported.
 
 ``treeish`` (optional)
 
-    The name of a "treeish" object that is checked out by default when
-    first cloning the remote repository. Only applies to Git
-    repositories. A treeish object may refer, for example, to a branch
-    or a tag. Defaults to ``master``.
+    The name of a "treeish" object that is checked out by default when first
+    cloning the remote repository. The treeish object may refer, for example,
+    to a branch or a tag. Defaults to ``master``.
 
-``dir`` (optional)
+``container`` (optional)
 
     The name of the directory where the project will be checked out
     into. An additional directory will be created under this one where
     the project files will be located so it is safe to use the same
     value for multiple projects. Relative paths are considered
-    relative to the location of the config file. Note: if you want to
-    check out all your projects under a single directory you can do so
-    by using the ``--dir`` switch without having to specify the path
-    in each section. This option will override the ``--dir`` switch
-    value.
+    relative to the location of the config file.
 
-For Subversion repositories you can optionally use the following
-options to define a non-standard repository layout. Omitting these
-options will assume standard ``tags / branches / trunk`` layout.
+An example configuration follows::
 
-``svn-trunk`` (optional)
+  [my.project]
+  url = git@myserver.com:my.project.git
+  type = git
+  treeish = v1.0-dev
+  container = src
 
-    Either a relative or absolute repository path to the trunk.
-
-``svn-tags`` (optional)
-
-    Either a relative or absolute repository path to the tags.
-
-``svn-branches`` (optional)
-
-    Either a relative or absolute repository path to the branches.
-
-``svn-clone-options`` (optional)
-
-    Additional options that will be passed verbatim to the ``git-svn``
-    command. This may be used, for example, to set the Subversion
-    username with ``--username=USER``.
-
-The name of the configuration section will be used to name the working
-directory. An example configuration file containing two repositories
-follows::
-
-    [gitctl]
-    url = git@github.com:dokai/gitctl.git
-
-    [other.project]
-    url = https://svn.server.com/svn/other.project
-    type = svn
-    dir = some/path
-
-This will clone the two projects in two directories: ``./src/gitctl``
-and ``./some/path/other.project``.
+This results in the my.project.git repository to be cloned into
+./src/my.project and the v1.0-dev to be checked out into the working
+directory.
 
 
 ``gitctl`` script
 *****************
 
-The ``gitctl`` script provides a few options::
+The ``gitctl`` script provides subcommands to implement the workflow. Each
+subcommand provides additional options. See ``gitctl [subcommand] --help`` for
+details.
 
-  $ gitctl --help
-  usage: gitctl <options> [proj1 [proj2]]...
-  
-  By default all projects in the configuration file will be pulled from
-  the remote repositories. However, if one or more project names are
-  provided as arguments to the script only those projects will be
-  pulled.
-  
-  options:
-    -h, --help            show this help message and exit
-    -c CONFIG, --config=CONFIG
-                          Configuration file. Defaults to: gitexternals.cfg
-    -d DIR, --dir=DIR     Default base directory where all the projects will be
-                          placed. This can be overridden on a per-project basis
-                          in the config file. Defaults to ./src relative to the
-                          location of the given configuration file.
+usage: gitctl [-h] [--config CONFIG] [--externals EXTERNALS]
+{status,create,update,branch,fetch,pending} ...
 
-Without any arguments the ``gitctl`` attempts to read a
-``gitexternals.cfg`` configuration file from the current directory and
-will clone / pull all the configured projects in ``$PWD/src``.
+Git workflow utility for managing projects containing multiple git
+repositories.
+
+positional arguments:
+  {status,create,update,branch,fetch,pending}
+                        Commands
+    create              Initializes a new local repository and creates a
+                        matching upstream repository.
+    update              Updates the configured repositories by either pulling
+                        existing ones or cloning new ones.
+    status              Shows the status of each external project and alerts
+                        if any are out of sync with the upstream repository.
+    branch              Provides information and operates on the branches of
+                        the projects.
+    pending             Checks if there are any pending changes between two
+                        consecutive states in the workflow.
+    fetch               Updates the remote branches on all projects without
+                        merging.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --config CONFIG       Location of the configuration file. If omitted the
+                        following locations will be search: $PWD/gitctl.cfg,
+                        ~/.gitctl.cfg.
+  --externals EXTERNALS
+                        Location of the externals configuration file. Defaults
+                        to $PWD/gitexternals.cfg
 
 
-Workflow
-********
-
-The script is most useful when you setup a new environment and saves
-you a lot of typing if you were to clone each repository by hand. It
-also provides a level of repeatability which can be useful.
-
-You would most likely have the configuration file in the main project
-repository and when setting up a new environment you would first clone
-the main project repository and run ``gitctl`` afterwards to get the
-dependent projects.
-
-After this you can either manage each project manually, pushing and
-pulling as you see fit or if you want you can use the ``gitctl``
-script to pull all (or any given ones).
 
 Installation
 ************
@@ -172,8 +186,10 @@ Dependencies
 ************
 
  * Git_ (>= 1.5.5)
+ * GitPython_ (> 1.4.1)
 
 .. _Git: http://git-scm.org/
+.. _GitPython: http://gitorious.org/projects/git-python
 
 Contributors
 ************
