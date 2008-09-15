@@ -1,0 +1,5 @@
+[GitPython]
+url = git@gitorious.org:git-python/mainline.git
+type = git
+container = src
+treeish = master

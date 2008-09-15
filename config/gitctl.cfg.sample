@@ -1,0 +1,27 @@
+[gitctl]
+# Name of the upstream remote
+upstream = origin
+
+# Address of the upstream repository server
+upstream-url = git@myserver.com
+
+# List of branches to track from upstream
+branches =
+    development
+    staging
+    production
+
+# Name of the development branch
+development-branch = development
+
+# Name of the staging branch.
+staging-branch = staging
+
+# Name of the production branch
+production-branch = production
+
+# Email address where commit messages will be sent when a changes are pushed upstream.
+commit-email = commit@myserver.com
+
+# Optional prefix used in commit emails 
+commit-email-prefix = [GIT]
