@@ -190,8 +190,9 @@ Using setuptools::
 Dependencies
 ************
 
- * Git_ (>= 1.5.5)
- * GitPython_ (> 1.4.1)
+ * Git_ >= 1.5.5
+ * GitPython_ >= 1.4.1.1 Not released yet, you can grab an egg in the
+   meanwhile at http://void.technocore.fi/~dokai/gitpython)
 
 .. _Git: http://git-scm.org/
 .. _GitPython: http://gitorious.org/projects/git-python
