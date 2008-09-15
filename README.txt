@@ -1,6 +1,4 @@
 .. contents::
-  
-  .
 
 Git clone URL: git://github.com/dokai/gitctl.git
 
@@ -10,7 +8,7 @@ Project page: http://github.com/dokai/gitctl
 Change history
 **************
 
-2.0a1 (XXXX-XX-XX)
+2.0a1 (2008-09-15)
 ==================
 
  - Complete overhaul to implement (a particular) Git workflow process in
