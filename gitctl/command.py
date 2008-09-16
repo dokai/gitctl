@@ -37,7 +37,8 @@ def gitctl_create(args):
      echo '. /usr/share/doc/git-core/contrib/hooks/post-receive-email' > hooks/post-receive &&
      chmod a+x hooks/post-receive && 
      git config hooks.mailinglist %(commit_email)s && 
-     git config hooks.emailprefix \\"%(commit_email_prefix)s \\""
+     git config hooks.emailprefix \\"%(commit_email_prefix)s \\" &&
+     git config hooks.emaildiff true"
     """ % { 'upstream' : config['upstream-url'],
             'project' : project_name,
             'commit_email' : config['commit-email'],
