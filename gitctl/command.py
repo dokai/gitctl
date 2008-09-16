@@ -214,7 +214,8 @@ def gitctl_pending(args):
             continue
         
         # Update the remotes
-        repository.git.fetch(config['upstream'])
+        if not args.no_fetch:
+            repository.git.fetch(config['upstream'])
 
         # Check for out-of-sync remote branches
         skip_project = False

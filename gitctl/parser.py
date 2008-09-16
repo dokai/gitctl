@@ -89,12 +89,16 @@ parser_pending.add_argument('--show-config', action='store_true',
     help='Prints a new externals configuration to stdout that contains the '
          'HEAD version of the production branch of each project. This assumes '
          '--production.')
+parser_pending.add_argument('--no-fetch', action='store_true',
+    help='Do not fetch before checking changes. This is '
+         'faster, but may be unreliable if the remote branches are out-of-sync.')
 parser_pending.set_defaults(
     diff=False,
     show_config=False,
     staging=False,
     production=False,
     dev=True,
+    no_fetch=False,
     func=gitctl.command.gitctl_pending)
 
 # 'gitctl fetch'

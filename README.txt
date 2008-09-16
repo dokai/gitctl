@@ -10,6 +10,8 @@ Change history
 
 2.0a3 (2008-09-16)
 
+ - Added a --no-fetch option to 'gitctl pending' to avoid fetching. [dokai]
+
  - 'gitctl update' now shows which projects were updated and which were not
    when using pinned down revisions [dokai]
 
