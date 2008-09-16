@@ -262,6 +262,9 @@ treeish = %s
         log = local.log('--pretty=oneline').splitlines()
         self.assertEquals(1, len(log))
         self.failUnless(log[0].endswith('Initial commit'))
+        
+        # Calling update again without changes should do nothing
+        gitctl.command.gitctl_update(self.args)
 
         # Create a parallel clone, commit some changes and push them upstream
         another = self.clone_upstream('another')
@@ -283,6 +286,7 @@ treeish = %s
         # Run update again and assert we got back the changes
         gitctl.command.gitctl_update(self.args)
         self.assertEquals(['project.local........................... Cloned and checked out ``%s``' % sha1_first,
+                           'project.local........................... OK',
                            'project.local........................... Checked out revision ``%s``' % sha1_second],
                           self.output)
         log = local.log('--pretty=oneline').splitlines()

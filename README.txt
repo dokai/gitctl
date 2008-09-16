@@ -8,6 +8,11 @@ Project page: http://github.com/dokai/gitctl
 Change history
 **************
 
+2.0a3 (2008-09-16)
+
+ - 'gitctl update' now shows which projects were updated and which were not
+   when using pinned down revisions [dokai]
+
 2.0a2 (2008-09-15)
 ==================
 
