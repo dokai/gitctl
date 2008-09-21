@@ -52,10 +52,14 @@ parser_status = cmd_parsers.add_parser('status',
 parser_status.add_argument('--no-fetch', action='store_true',
     help='Check the status without fetching from upstream first. This is '
          'faster, but may be unreliable if the remote branches are out-of-sync.')
+parser_status.add_argument('project', nargs='*',
+    help='Name of a project to check. If omitted all projects in the '
+         'externals configuration will be checked.')
 parser_status.set_defaults(
     func=gitctl.command.gitctl_status,
     no_fetch=False)
 
+# 'gitctl branch'
 parser_branch = cmd_parsers.add_parser('branch',
     help='Provides information and operates on the branches of the projects.')
 parser_branch.add_argument('--list', action='store_true',
@@ -64,6 +68,9 @@ parser_branch.add_argument('--list', action='store_true',
 parser_branch.add_argument('--checkout', metavar='BRANCH', nargs=1,
     help='Attempts to switch each project to the given branch. The project '
          'working directory must be clean or otherwise a warning will be issued.')
+parser_branch.add_argument('project', nargs='*',
+    help='Name of a project. If omitted all projects in the '
+         'externals configuration will be handled.')
 parser_branch.set_defaults(
     func=gitctl.command.gitctl_branch,
     list=True)
@@ -104,6 +111,9 @@ parser_pending.set_defaults(
 # 'gitctl fetch'
 parser_fetch = cmd_parsers.add_parser('fetch',
     help='Updates the remote branches on all projects without merging.')
+parser_fetch.add_argument('project', nargs='*',
+    help='Name of a project to fetch. If omitted all projects in the '
+         'externals configuration will be fetched.')
 parser_fetch.set_defaults(func=gitctl.command.gitctl_fetch)
 
 

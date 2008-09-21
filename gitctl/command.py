@@ -84,7 +84,7 @@ def gitctl_fetch(args):
     projects = gitctl.utils.parse_externals(args.externals)
     config = gitctl.utils.parse_config(args.config)
     
-    for proj in projects:
+    for proj in gitctl.utils.filter_projects(projects, set(args.project)):
         repository = git.Git(gitctl.utils.project_path(proj))
         repository.fetch(config['upstream'])
         LOG.info('%s Fetched', gitctl.utils.pretty(proj['name']))
@@ -94,7 +94,7 @@ def gitctl_branch(args):
     projects = gitctl.utils.parse_externals(args.externals)
     config = gitctl.utils.parse_config(args.config)
     
-    for proj in projects:
+    for proj in gitctl.utils.filter_projects(projects, set(args.project)):
         repository = git.Repo(gitctl.utils.project_path(proj))
         if not args.checkout and args.list:
             LOG.info('%s %s' % (gitctl.utils.pretty(proj['name']),
@@ -120,10 +120,10 @@ def gitctl_update(args):
     If the project already exists locally, it will be pulled (or rebased).
     Otherwise it will cloned.
     """
-    projects = gitctl.utils.parse_externals(args.externals)
     config = gitctl.utils.parse_config(args.config)
+    projects = gitctl.utils.parse_externals(args.externals)
     
-    for proj in projects:
+    for proj in gitctl.utils.filter_projects(projects, set(args.project)):
         path = gitctl.utils.project_path(proj)
         if os.path.exists(path):
             repository = git.Repo(path)
@@ -168,7 +168,7 @@ def gitctl_status(args):
     config = gitctl.utils.parse_config(args.config)
     projects = gitctl.utils.parse_externals(args.externals)
 
-    for proj in projects:
+    for proj in gitctl.utils.filter_projects(projects, set(args.project)):
         repository = git.Repo(gitctl.utils.project_path(proj))
         if not args.no_fetch:
             # Fetch upstream
@@ -273,4 +273,4 @@ def gitctl_pending(args):
         LOG.info(gitctl.utils.generate_externals(projects))
 
 __all__ = ['gitctl_create', 'gitctl_fetch', 'gitctl_update', 'gitctl_status',
-           'gitctl_pending',]
+           'gitctl_pending', 'gitctl_branch']

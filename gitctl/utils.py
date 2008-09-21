@@ -120,3 +120,15 @@ def generate_externals(projects):
     buf = StringIO()
     config.write(buf)
     return buf.getvalue()
+
+def filter_projects(projects, selection):
+    """Returns"""
+    if len(selection) == 0:
+        return projects
+    
+    existing = set(p['name'] for p in projects)
+    if not selection.issubset(existing):
+        LOG.error('Unknown project(s): %s', ', '.join(selection))
+        sys.exit(1)
+    else:
+        return [p for p in projects if p['name'] in selection]

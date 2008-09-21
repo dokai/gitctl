@@ -8,7 +8,11 @@ Project page: http://github.com/dokai/gitctl
 Change history
 **************
 
-2.0a3 (2008-09-16)
+2.0a3 (xxxx-xx-xx)
+
+ - Added support for specifying which projects to operate on in addition to
+   performing an operation on all the projects in the externals
+   configuration. [dokai]
 
  - Added a --no-fetch option to 'gitctl pending' to avoid fetching. [dokai]
 
