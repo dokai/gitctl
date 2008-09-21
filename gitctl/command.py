@@ -53,7 +53,7 @@ def gitctl_create(args):
 
     # Create the initial commit
     repository.add('.')
-    repository.commit('-m', 'gitctl: project initialization')
+    repository.commit('-m', args.message)
     
     # Create local branches
     for remote, local in config['branches']:
@@ -76,6 +76,13 @@ def gitctl_create(args):
     repository.checkout(config['development-branch'])
     # Get rid of the default master branch
     repository.branch('-d', 'master')
+    
+    # Fix the HEAD ref in the upstream repo so cloning does not give an error
+    gitctl.utils.run('ssh %(upstream)s "echo ref: refs/heads/%(devbranch)s > %(project)s.git/HEAD"' % {
+        'upstream' : config['upstream-url'],
+        'devbranch' : config['development-branch'],
+        'project' : project_name,
+        })
     
     LOG.info('Checked out development branch ``%s``', config['development-branch'])
 

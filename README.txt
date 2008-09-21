@@ -8,7 +8,14 @@ Project page: http://github.com/dokai/gitctl
 Change history
 **************
 
-2.0a3 (xxxx-xx-xx)
+2.0a3 (2008-09-21)
+==================
+
+ - Added support for specifying the initial commit message by using
+   'gitctl create --message'. [dokai]
+
+ - Fixed 'gitctl create' to not leave the upstream repository's HEAD in broken
+   state. [dokai]
 
  - Added support for specifying which projects to operate on in addition to
    performing an operation on all the projects in the externals

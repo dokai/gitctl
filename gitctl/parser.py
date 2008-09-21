@@ -30,7 +30,11 @@ parser_create = cmd_parsers.add_parser('create',
     help='Initializes a new local repository and creates a matching '
          'upstream repository.')
 parser_create.add_argument('project', nargs=1, help='Name of the project')
-parser_create.set_defaults(func=gitctl.command.gitctl_create)
+parser_create.add_argument('--message', '-m',
+    help='Initial commit message. Defaults to "[gitctl] Project initialization.".')
+parser_create.set_defaults(
+    message='[gitctl] Project initialization.',
+    func=gitctl.command.gitctl_create)
 
 # 'gitctl update'
 parser_update = cmd_parsers.add_parser('update',
