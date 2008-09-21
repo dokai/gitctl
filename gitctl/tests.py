@@ -121,7 +121,7 @@ class TestCommandBranch(CommandTestCase):
         self.args = mock.Mock()
         self.args.config = os.path.join(self.container, 'gitctl.cfg')
         self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
-
+        self.args.project = []
     
     def test_branch__list(self):
         self.args.list = True
@@ -185,6 +185,7 @@ class TestCommandUpdate(CommandTestCase):
         self.args = mock.Mock()
         self.args.config = os.path.join(self.container, 'gitctl.cfg')
         self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
+        self.args.project = []
         
         local_path = join(self.container, 'project.local')
         
@@ -205,6 +206,7 @@ class TestCommandUpdate(CommandTestCase):
         self.args = mock.Mock()
         self.args.config = os.path.join(self.container, 'gitctl.cfg')
         self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
+        self.args.project = []
         self.args.merge = True
 
         local_path = join(self.container, 'project.local')
@@ -240,6 +242,7 @@ class TestCommandUpdate(CommandTestCase):
         self.args = mock.Mock()
         self.args.config = os.path.join(self.container, 'gitctl.cfg')
         self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
+        self.args.project = []
         self.args.merge = True
 
         # Get the SHA1 checksum for the current head and pin the externals to it.
@@ -300,6 +303,7 @@ treeish = %s
         self.args = mock.Mock()
         self.args.config = os.path.join(self.container, 'gitctl.cfg')
         self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
+        self.args.project = []
         self.args.merge = False
 
         local_path = join(self.container, 'project.local')
@@ -341,6 +345,7 @@ class TestCommandFetch(CommandTestCase):
         self.args = mock.Mock()
         self.args.config = os.path.join(self.container, 'gitctl.cfg')
         self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
+        self.args.project = []
 
     def test_fetch(self):
         # Create another local clone, add a file and push to make the remote
@@ -572,6 +577,7 @@ class TestCommandStatus(CommandTestCase):
         self.args = mock.Mock()
         self.args.config = os.path.join(self.container, 'gitctl.cfg')
         self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
+        self.args.project = []
         self.args.no_fetch = False
 
     def test_status__ok(self):
