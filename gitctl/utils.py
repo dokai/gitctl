@@ -4,7 +4,6 @@
 import re
 import os
 import sys
-import git
 import shlex
 import logging
 import subprocess

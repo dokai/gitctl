@@ -6,8 +6,6 @@ import mock
 import copy
 import os
 
-from StringIO import StringIO
-
 import git
 import gitctl
 import gitctl.command
