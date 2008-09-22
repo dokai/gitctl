@@ -8,6 +8,11 @@ Project page: http://github.com/dokai/gitctl
 Change history
 **************
 
+2.0a4 (xxxx-xx-xx)
+==================
+
+ - Added the '-v' switch to show the version of the gitctl. [dokai]
+
 2.0a3 (2008-09-21)
 ==================
 

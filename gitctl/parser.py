@@ -4,11 +4,15 @@
 import os
 import argparse
 import gitctl.command
+import pkg_resources
+
+entrypoint = pkg_resources.iter_entry_points('console_scripts', 'gitctl').next()
 
 parser = argparse.ArgumentParser(
     prog='gitctl',
     description='Git workflow utility for managing projects containing '
-                'multiple git repositories.')
+                'multiple git repositories.',
+    version='%%(prog)s %s' % entrypoint.dist.version)
 
 # Global parameters
 parser.add_argument('--config', type=lambda x: [x],
