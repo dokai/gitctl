@@ -234,16 +234,19 @@ def gitctl_pending(args):
         if not args.no_fetch:
             repository.git.fetch(config['upstream'])
 
-        # Check for out-of-sync remote branches
-        skip_project = False
-        for remote, local in config['branches']:
-            if remote in remote_branches:
-                if len(repository.git.diff(remote, local).strip()) > 0:
-                    LOG.warning('%s Branch ``%s`` out of sync with upstream. Run "gitcl update" or pull manually.',
-                                gitctl.utils.pretty(proj['name']), local)
-                    skip_project = True
-        if skip_project:
-            continue
+        # Check for out-of-sync remote branches in the staging / development mode.
+        # For production mode it doesn't make sense since we're using HEADless
+        # checkouts and the branches are not kept in sync with upstream.
+        if not args.production:
+            skip_project = False
+            for remote, local in config['branches']:
+                if remote in remote_branches:
+                    if len(repository.git.diff(remote, local).strip()) > 0:
+                        LOG.warning('%s Branch ``%s`` out of sync with upstream. Run "gitcl update" or pull manually.',
+                                    gitctl.utils.pretty(proj['name']), local)
+                        skip_project = True
+            if skip_project:
+                continue
         
         # Get actual versions of the trees to be compared.
         if args.production:
@@ -253,11 +256,11 @@ def gitctl_pending(args):
                 continue
                 
             if not gitctl.utils.is_sha1(proj['treeish']):
-                LOG.warning('Treeish is not a SHA1 revision: %s', proj['treeish'])
+                LOG.warning('%s Treeish is not a SHA1 revision: %s', gitctl.utils.pretty(proj['name']), proj['treeish'])
                 continue
-                
+            
             from_ = repository.git.rev_parse(proj['treeish'])
-            to = repository.git.rev_parse(config['production-branch'])
+            to = repository.git.rev_parse('%s/%s' % (config['upstream'], config['production-branch']))
         elif args.staging:
 
             if not assert_branch(config['production-branch']):

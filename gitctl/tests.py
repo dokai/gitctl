@@ -442,11 +442,11 @@ treeish = master
         self.assertEquals('project.local........................... Uncommitted local changes.',
                           self.output[0])
 
-    def test_pending__production_ok(self):
+    def test_pending__production_without_pinned_revision(self):
         # By default all the branches are in-sync with each other
         self.args.production = True
         gitctl.command.gitctl_pending(self.args)
-        self.assertEquals('project.local........................... OK', self.output[0])
+        self.assertEquals('project.local........................... Treeish is not a SHA1 revision: development', self.output[0])
 
     def test_pending__production_advanced_over_pinned_versions(self):
         self.args.production = True
