@@ -209,7 +209,16 @@ def gitctl_pending(args):
         local_branches = set(repository.git.branch().split())
         remote_branches = set(repository.git.branch('-r').split())
         
-        if config['development-branch'] not in local_branches:
+        def assert_branch(branch, quiet=False):
+            if branch in local_branches:
+                return True
+            else:
+                if not quiet:
+                    LOG.warning('%s Branch %s does not exist', gitctl.utils.pretty(proj['name']), branch)
+                return False
+                
+        
+        if not assert_branch(config['development-branch'], quiet=True):
             # This looks to be a package that does not share our common repository layout
             # which is possible with 3rd party packages etc. We can safely ignore it.
             if not args.show_config:
@@ -240,12 +249,31 @@ def gitctl_pending(args):
         if args.production:
             # Compare the the pinned down version against the HEAD of the
             # production branch
+            if not assert_branch(config['production-branch']):
+                continue
+                
+            if not gitctl.utils.is_sha1(proj['treeish']):
+                LOG.warning('Treeish is not a SHA1 revision: %s', proj['treeish'])
+                continue
+                
             from_ = repository.git.rev_parse(proj['treeish'])
             to = repository.git.rev_parse(config['production-branch'])
         elif args.staging:
+
+            if not assert_branch(config['production-branch']):
+                continue
+            if not assert_branch(config['staging-branch']):
+                continue
+
             from_ = repository.git.rev_parse(config['production-branch'])
             to = repository.git.rev_parse(config['staging-branch'])
         elif args.dev:
+
+            if not assert_branch(config['development-branch']):
+                continue
+            if not assert_branch(config['staging-branch']):
+                continue
+
             from_ = repository.git.rev_parse(config['staging-branch'])
             to = repository.git.rev_parse(config['development-branch'])
         
