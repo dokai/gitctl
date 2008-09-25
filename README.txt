@@ -8,14 +8,20 @@ Project page: http://github.com/dokai/gitctl
 Change history
 **************
 
-2.0a4 (xxxx-xx-xx)
+2.0a4 (2008-09-25)
 ==================
+
+ - Fixed 'gitctl pending --production' which compared the wrong trees. When
+   using pinned down revisions (HEADless working directories) we need to
+   always compare against the remote branches. [dokai]
+   
+ - Fixed a bug in 'gitctl pending' if not all branches were available. [dokai]
 
  - Added the '-v' switch to show the version of the gitctl. [dokai]
 
 2.0a3 (2008-09-21)
 ==================
-
+  
  - Added support for specifying the initial commit message by using
    'gitctl create --message'. [dokai]
 
