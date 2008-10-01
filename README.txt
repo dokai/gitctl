@@ -8,6 +8,13 @@ Project page: http://github.com/dokai/gitctl
 Change history
 **************
 
+2.0a5 (2008-10-01)
+==================
+
+ - Changed 'gitctl update' to attempt a fast-forward merge on all configured
+   branches. If fast-forward is not possible a message will be shown and the
+   branch left unchanged. [dokai]
+
 2.0a4 (2008-09-25)
 ==================
 
