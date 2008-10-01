@@ -134,26 +134,72 @@ def gitctl_update(args):
         path = gitctl.utils.project_path(proj)
         if os.path.exists(path):
             repository = git.Repo(path)
+            repository.git.fetch()
+            
             if repository.is_dirty:
                 LOG.warning('%s Dirty working directory. Please commit or stash and try again.', gitctl.utils.pretty(proj['name']))
                 continue
 
+            # Get the current treeish
             if gitctl.utils.is_sha1(proj['treeish']):
-                # In case the treeish is a full SHA1 checksum it means that we're using a
-                # pinned down version and pulling doesn't make sense. In that case we simply
-                # fetch and checkout the given treeish.
-                repository.git.fetch()
-                if repository.git.rev_parse('HEAD').strip() == proj['treeish']:
-                    LOG.info('%s OK', gitctl.utils.pretty(proj['name']))
-                else:
-                    repository.git.checkout(proj['treeish'])
-                    LOG.info('%s Checked out revision ``%s``', gitctl.utils.pretty(proj['name']), proj['treeish'])
-            elif args.merge:
-                repository.git.pull()
-                LOG.info('%s Pulled', gitctl.utils.pretty(proj['name']))
+                pinned_at = repository.git.rev_parse('HEAD').strip()
+                treeish = proj['treeish']
             else:
-                repository.git.pull('--rebase')
-                LOG.info('%s Rebased', gitctl.utils.pretty(proj['name']))
+                pinned_at = None
+                treeish = repository.active_branch
+            
+            remote_branches = set(repository.git.branch('-r').split())
+            local_branches = set(repository.git.branch().split())
+
+            ok = True
+            updated = False
+            
+            for remote, local in config['branches']:
+                if remote in remote_branches and local in local_branches:
+                    if repository.git.rev_parse(remote) == repository.git.rev_parse(local):
+                        # Skip branches that have not changed.
+                        continue
+            
+                    # Switch to the branch to avoid implicit merge commits
+                    repository.git.checkout(local)
+                    
+                    # Use a remote:local refspec to pull the given branch. We omit the + from the
+                    # refspec to attempt a fast-forward merge.
+                    status, stdout, stderr = repository.git.pull(
+                        config['upstream'],
+                        '%s:%s' % (local, local),
+                        with_exceptions=False,
+                        with_extended_output=True)
+                    
+                    if status != 0:
+                        ok = False
+                        if 'non fast forward' in stderr:
+                            # Fast-forward merge was not possible, we'll
+                            # bail out for now. We could attempt a normal 'git pull' operation but that
+                            # might leave multiple branch in an inconsistent state at the same time.
+                            LOG.warning('%s Fast forward merge not possible for branch ``%s``. Try syncing with upstream manually (pull, push or merge).', gitctl.utils.pretty(proj['name']), local)
+                        else:
+                            # Some other kind of error.
+                            LOG.critical('%s Update failure: %s', gitctl.utils.pretty(proj['name']), stderr)
+                    else:
+                        updated = True    
+
+            # Check out the original branch
+            repository.git.checkout(treeish)
+
+            if ok:
+                if gitctl.utils.is_sha1(treeish) and pinned_at is not None:
+                    # If we're using pinned down revisions we only report changes when the
+                    # explicit revision was changed, even if the branches were updated.
+                    if pinned_at == proj['treeish']:
+                        LOG.info('%s OK', gitctl.utils.pretty(proj['name']))
+                    else:
+                        LOG.info('%s Checked out revision ``%s``', gitctl.utils.pretty(proj['name']), treeish)
+                elif updated:
+                    LOG.info('%s Updated', gitctl.utils.pretty(proj['name']))
+                else:
+                    LOG.info('%s OK', gitctl.utils.pretty(proj['name']))
+
         else:
             # Clone the repository
             temp = git.Git('/tmp')

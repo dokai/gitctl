@@ -42,16 +42,14 @@ parser_create.set_defaults(
 
 # 'gitctl update'
 parser_update = cmd_parsers.add_parser('update',
-    help='Updates the configured repositories by either pulling existing ones '
-         'or cloning new ones.')
+    help='Updates the configured repositories by either attempting a fast-forward '
+         'merge on existing project branches or cloning new projects.')
 parser_update.add_argument('project', nargs='*',
     help='Name of a project to update. If omitted all projects in the '
          'externals configuration will be updated.')
-parser_update.add_argument('--merge', action='store_true',
-    help='Merge instead of rebasing after fetching the changes.')
 parser_update.set_defaults(
     func=gitctl.command.gitctl_update,
-    merge=False)
+    )
 
 # 'gitctl status'
 parser_status = cmd_parsers.add_parser('status',

@@ -205,7 +205,6 @@ class TestCommandUpdate(CommandTestCase):
         self.args.config = os.path.join(self.container, 'gitctl.cfg')
         self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
         self.args.project = []
-        self.args.merge = True
 
         local_path = join(self.container, 'project.local')
         local = git.Git(local_path)
@@ -228,7 +227,7 @@ class TestCommandUpdate(CommandTestCase):
         # Run update again and assert we got back the changes
         gitctl.command.gitctl_update(self.args)
         self.assertEquals(['project.local........................... Cloned and checked out ``development``',
-                           'project.local........................... Pulled'],
+                           'project.local........................... Updated'],
                           self.output)
         log = local.log('--pretty=oneline').splitlines()
         self.assertEquals(2, len(log))
@@ -241,7 +240,6 @@ class TestCommandUpdate(CommandTestCase):
         self.args.config = os.path.join(self.container, 'gitctl.cfg')
         self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
         self.args.project = []
-        self.args.merge = True
 
         # Get the SHA1 checksum for the current head and pin the externals to it.
         sha1_first = self.upstream.rev_parse('HEAD').strip()
@@ -302,7 +300,6 @@ treeish = %s
         self.args.config = os.path.join(self.container, 'gitctl.cfg')
         self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
         self.args.project = []
-        self.args.merge = False
 
         local_path = join(self.container, 'project.local')
         local = git.Git(local_path)
@@ -325,11 +322,108 @@ treeish = %s
         # Run update again and assert we got back the changes
         gitctl.command.gitctl_update(self.args)
         self.assertEquals(['project.local........................... Cloned and checked out ``development``',
-                           'project.local........................... Rebased'],
+                           'project.local........................... Updated'],
                           self.output)
         log = local.log('--pretty=oneline').splitlines()
         self.assertEquals(2, len(log))
         self.failUnless(log[0].endswith('Second commit'))
+
+    def test_update__fast_forward_ok(self):
+        # Mock some command line arguments
+        self.args = mock.Mock()
+        self.args.config = os.path.join(self.container, 'gitctl.cfg')
+        self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
+        self.args.project = []
+
+        local_path = join(self.container, 'project.local')
+        local = git.Git(local_path)
+
+        # Run update once to clone the project
+        gitctl.command.gitctl_update(self.args)
+        self.failUnless(os.path.exists(local_path))
+        # Assert that is has the initial commit only
+        log = local.log('--pretty=oneline').splitlines()
+        self.assertEquals(1, len(log))
+        self.failUnless(log[0].endswith('Initial commit'))
+        
+        # Create a parallel clone, commit some changes in all branches and push them
+        # upstream
+        another = self.clone_upstream('another')
+        for i, branch in enumerate(('development', 'staging', 'production')):
+            another.checkout(branch)
+            open(os.path.join(another.git_dir, 'random_addition_%d.txt' % i), 'w').write('Foobar')
+            another.add('random_addition_%d.txt' % i)
+            another.commit('-m', 'Second commit in %s' % branch)
+        another.push()
+
+        # Record the current branch
+        current_branch = git.Repo(local.git_dir).active_branch
+        # Run update again and assert we got back the changes
+        gitctl.command.gitctl_update(self.args)
+        self.assertEquals(['project.local........................... Cloned and checked out ``development``',
+                           'project.local........................... Updated'],
+                            self.output)
+                          
+        # Assert that we are still in the same branch that we started in
+        self.assertEquals(current_branch, git.Repo(local.git_dir).active_branch)
+        # Assert that each branch was updated
+        for i, branch in enumerate(('development', 'staging', 'production')):
+            local.checkout(branch)
+            log = local.log('--pretty=oneline').splitlines()
+            self.assertEquals(2, len(log))
+            self.failUnless(log[0].endswith('Second commit in %s' % branch))
+    
+    def test_update__fast_forward_failure(self):
+        # Mock some command line arguments
+        self.args = mock.Mock()
+        self.args.config = os.path.join(self.container, 'gitctl.cfg')
+        self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
+        self.args.project = []
+
+        local_path = join(self.container, 'project.local')
+        local = git.Git(local_path)
+
+        # Run update once to clone the project
+        gitctl.command.gitctl_update(self.args)
+        self.failUnless(os.path.exists(local_path))
+        # Assert that is has the initial commit only
+        log = local.log('--pretty=oneline').splitlines()
+        self.assertEquals(1, len(log))
+        self.failUnless(log[0].endswith('Initial commit'))
+        
+        # Create a parallel clone, commit some changes in all branches and push them
+        # upstream
+        another = self.clone_upstream('another')
+        for i, branch in enumerate(('development', 'staging', 'production')):
+            another.checkout(branch)
+            open(os.path.join(another.git_dir, 'random_addition_%d.txt' % i), 'w').write('Foobar')
+            another.add('random_addition_%d.txt' % i)
+            another.commit('-m', 'Second commit in %s' % branch)
+        another.push()
+        
+        # Create a local change in the development branch will make a fast-forward
+        # merge impossible.
+        open(os.path.join(local.git_dir, 'conflicting.txt'), 'w').write('CONFLICT!')
+        local.add('conflicting.txt')
+        local.commit('-m', 'local change')
+        
+        # Record the current branch
+        current_branch = git.Repo(local.git_dir).active_branch
+        # Run update again and assert we got back the changes
+        gitctl.command.gitctl_update(self.args)
+        self.assertEquals(['project.local........................... Cloned and checked out ``development``',
+                           'project.local........................... Fast forward merge not possible for branch ``development``. Try syncing with upstream manually (pull, push or merge).'],
+                            self.output)
+
+        # Assert that we are still in the same branch that we started in
+        self.assertEquals(current_branch, git.Repo(local.git_dir).active_branch)
+
+        # Assert that the non-conflicting branches were updated
+        for i, branch in enumerate(('staging', 'production')):
+            local.checkout(branch)
+            log = local.log('--pretty=oneline').splitlines()
+            self.assertEquals(2, len(log))
+            self.failUnless(log[0].endswith('Second commit in %s' % branch))
 
 class TestCommandFetch(CommandTestCase):
     """Tests for the ``fetch`` command."""
