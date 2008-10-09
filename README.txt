@@ -8,6 +8,11 @@ Project page: http://github.com/dokai/gitctl
 Change history
 **************
 
+2.0a6 (xxxx-xx-xx)
+
+ - Refactored the ``generate_externals`` function to guarantee the order of
+   sections in the generated configuration file. [dokai]
+
 2.0a5 (2008-10-01)
 ==================
 

@@ -827,17 +827,17 @@ treeish = master
                      'type': 'git',
                      'url': 'git@github.com:dokai/your-project'}]
         self.assertEquals("""
-[your.project]
-url = git@github.com:dokai/your-project
-container = src
-type = git
-treeish = master
-
 [my.project]
 url = git@github.com:dokai/my-project
-container = src
 type = git
+container = src
 treeish = development
+
+[your.project]
+url = git@github.com:dokai/your-project
+type = git
+container = src
+treeish = master
          """.strip(), gitctl.utils.generate_externals(projects).strip())
     
     def test_externals_roundtrip(self):

@@ -110,15 +110,14 @@ def parse_externals(config):
 
 def generate_externals(projects):
     """Generates an externals configuration file."""
-    config = SafeConfigParser()
+    ext = StringIO()
     for project in projects:
-        section = project.pop('name')
-        config.add_section(section)
-        for k, v in project.iteritems():
-            config.set(section, k, v)
-    buf = StringIO()
-    config.write(buf)
-    return buf.getvalue()
+        print >> ext, '[%s]' % project.pop('name')
+        for key, value in project.iteritems():
+            print >> ext, '%s = %s' % (key, value)
+        print >> ext
+
+    return ext.getvalue().strip()
 
 def filter_projects(projects, selection):
     """Returns"""
