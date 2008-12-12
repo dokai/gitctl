@@ -135,7 +135,10 @@ def gitctl_update(args):
         path = gitctl.utils.project_path(proj)
         if os.path.exists(path):
             repository = git.Repo(path)
-            repository.git.fetch()
+            try:
+                repository.git.fetch()
+            except git.errors.GitCommandError, x:
+                LOG.error('%s ERROR %s', gitctl.utils.pretty(proj['name']), x)
             
             if repository.is_dirty:
                 LOG.info('%s Dirty working directory. Please commit or stash and try again.', gitctl.utils.pretty(proj['name']))
