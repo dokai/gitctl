@@ -71,6 +71,21 @@ parser_path.set_defaults(
     func=gitctl.command.gitctl_path,
     )
 
+# 'gitctl sh'
+parser_sh = cmd_parsers.add_parser('sh',
+    help='Executes shell command for specified projects.')
+parser_sh.add_argument('project', nargs="*",
+    help='Name of a project.')
+parser_sh.add_argument('--from-file', '-f', 
+    type=argparse.FileType('r'), default=None,
+    help='the file with a list of projects')
+parser_sh.add_argument('--command', '-c',
+    type=str, default="echo 'no command specified'",
+    help='the file with a list of projects')
+parser_sh.set_defaults(
+    func=gitctl.command.gitctl_sh,
+    )
+
 # 'gitctl status'
 parser_status = cmd_parsers.add_parser('status',
     help='Shows the status of each external project and alerts if any are out '
