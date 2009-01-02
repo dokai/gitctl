@@ -329,5 +329,5 @@ def gitctl_pending(args):
     if args.show_config:
         LOG.info(gitctl.utils.generate_externals(projects))
 
-__all__ = ['gitctl_create', 'gitctl_fetch', 'gitctl_update', 'gitctl_status',
+__all__ = ['gitctl_create', 'gitctl_fetch', 'gitctl_update', 'gitctl_path', 'gitctl_status',
            'gitctl_pending', 'gitctl_branch']
