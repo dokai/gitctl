@@ -223,6 +223,14 @@ def gitctl_update(args):
             repository.checkout(proj['treeish'])
             LOG.info('%s Cloned and checked out ``%s``', gitctl.utils.pretty(proj['name']), proj['treeish'])
 
+def gitctl_path(args):
+    """Give the path to project directory."""
+    config = gitctl.utils.parse_config(args.config)
+    projects = gitctl.utils.parse_externals(args.externals)
+
+    for proj in gitctl.utils.filter_projects(projects, set(args.project)):
+        print gitctl.utils.project_path(proj, relative=args.relative)
+
 def gitctl_status(args):
     """Checks the status of all external projects."""
     config = gitctl.utils.parse_config(args.config)

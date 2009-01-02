@@ -54,6 +54,17 @@ parser_update.set_defaults(
     func=gitctl.command.gitctl_update,
     )
 
+# 'gitctl path'
+parser_path = cmd_parsers.add_parser('path',
+    help='Shows the path to the project directory.')
+parser_path.add_argument('project', nargs=1,
+    help='Name of a project to show the path.')
+parser_path.add_argument('--relative', action='store_true',
+    help='Whether the path should be relative.')
+parser_path.set_defaults(
+    func=gitctl.command.gitctl_path,
+    )
+
 # 'gitctl status'
 parser_status = cmd_parsers.add_parser('status',
     help='Shows the status of each external project and alerts if any are out '
