@@ -12,7 +12,7 @@ setup(name='gitctl',
       description="A particular Git workflow implementation with a "
                   "development/staging/production code-flow model and support "
                   "for multiple repositories as part of a larger project.",
-      long_description=read('README.txt'),
+      long_description=read('README.rst'),
       classifiers=[
         'Development Status :: 3 - Alpha',
         'Environment :: Console',
@@ -35,7 +35,6 @@ setup(name='gitctl',
         'argparse',
         'GitPython',
         'mock',
-          # -*- Extra requirements: -*-
         ],
       test_suite='gitctl.tests.test_suite',
       entry_points="""
