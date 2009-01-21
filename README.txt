@@ -260,10 +260,9 @@ Dependencies
 
  * Git_ >= 1.5.5
  * argparse_
- * GitPython_ >= 0.1.4.1 Not released yet, you can grab an egg in the
-   meanwhile at http://void.technocore.fi/~dokai/gitpython)
+ * GitPython_ >= 0.1.5
 
-.. _Git: http://git-scm.org/
+.. _Git: http://git-scm.com/
 .. _argparse: http://argparse.python-hosting.com/
 .. _GitPython: http://gitorious.org/projects/git-python
 
