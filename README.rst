@@ -10,6 +10,11 @@ Change history
 
 2.0a6 (xxxx-xx-xx)
 
+ - When updating a hard-pinned revision perform a "git reset --hard" to clear
+   the working directory before checking out the revision. This fixes some
+   issue where the working directory was in an inconsistent state and the
+   checkout failed. [dokai]
+
  - Refactored the ``generate_externals`` function to guarantee the order of
    sections in the generated configuration file. [dokai]
 

@@ -182,9 +182,14 @@ def gitctl_update(args):
                             # Some other kind of error.
                             LOG.critical('%s Update failure: %s', gitctl.utils.pretty(proj['name']), stderr)
                     else:
-                        updated = True    
+                        updated = True
 
             # Check out the original branch
+            if gitctl.utils.is_sha1(treeish):
+                # In case of a hard-pinned SHA1 we know we can ditch everything so we'll
+                # perform a hard reset to make sure that the following checkout won't fail.
+                repository.git.reset('--hard')
+
             repository.git.checkout(treeish)
 
             if ok:
