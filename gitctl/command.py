@@ -17,7 +17,7 @@ def gitctl_create(args):
     config = gitctl.utils.parse_config(args.config)
     
     if not os.path.exists(project_path):
-        LOG.critical('Project path does not exist!', project_path)
+        LOG.critical('Project path %s does not exist!', project_path)
         sys.exit(1)
     
     project_url = '%s:%s.git' % (config['upstream-url'], project_name)
