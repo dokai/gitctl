@@ -140,57 +140,54 @@ def gitctl_update(args):
                 LOG.warning('%s Dirty working directory. Please commit or stash and try again.', gitctl.utils.pretty(proj['name']))
                 continue
 
-            # Get the current treeish
-            if gitctl.utils.is_sha1(proj['treeish']):
-                pinned_at = repository.git.rev_parse('HEAD').strip()
-                treeish = proj['treeish']
-            else:
-                pinned_at = None
-                treeish = repository.active_branch
-            
-            remote_branches = set(repository.git.branch('-r').split())
-            local_branches = set(repository.git.branch().split())
-
             ok = True
             updated = False
-            
-            for remote, local in config['branches']:
-                if remote in remote_branches and local in local_branches:
-                    if repository.git.rev_parse(remote) == repository.git.rev_parse(local):
-                        # Skip branches that have not changed.
-                        continue
-            
-                    # Switch to the branch to avoid implicit merge commits
-                    repository.git.checkout(local)
-                    
-                    # Use a remote:local refspec to pull the given branch. We omit the + from the
-                    # refspec to attempt a fast-forward merge.
-                    status, stdout, stderr = repository.git.pull(
-                        config['upstream'],
-                        '%s:%s' % (local, local),
-                        with_exceptions=False,
-                        with_extended_output=True)
-                    
-                    if status != 0:
-                        ok = False
-                        if 'non fast forward' in stderr:
-                            # Fast-forward merge was not possible, we'll
-                            # bail out for now. We could attempt a normal 'git pull' operation but that
-                            # might leave multiple branch in an inconsistent state at the same time.
-                            LOG.warning('%s Fast forward merge not possible for branch ``%s``. Try syncing with upstream manually (pull, push or merge).', gitctl.utils.pretty(proj['name']), local)
+
+            if gitctl.utils.is_sha1(proj['treeish']):
+                # We're dealing with an explicit version pin.
+                pinned_at = repository.git.rev_parse('HEAD').strip()
+                treeish = proj['treeish']
+                # Simply do a hard reset to the requested revision
+                repository.git.reset('--hard', treeish)
+            else:
+                # We're dealing with a dynamic branch pointer
+                pinned_at = None
+                treeish = repository.active_branch
+
+                remote_branches = set(repository.git.branch('-r').split())
+                local_branches = set(repository.git.branch().split())
+
+                for remote, local in config['branches']:
+                    if remote in remote_branches and local in local_branches:
+                        if repository.git.rev_parse(remote) == repository.git.rev_parse(local):
+                            # Skip branches that have not changed.
+                            continue
+
+                        # Switch to the branch to avoid implicit merge commits
+                        repository.git.checkout(local)
+
+                        # Use a remote:local refspec to pull the given branch. We omit the + from the
+                        # refspec to attempt a fast-forward merge.
+                        status, stdout, stderr = repository.git.pull(
+                            config['upstream'],
+                            '%s:%s' % (local, local),
+                            with_exceptions=False,
+                            with_extended_output=True)
+
+                        if status != 0:
+                            ok = False
+                            if 'non fast forward' in stderr.lower():
+                                # Fast-forward merge was not possible, we'll
+                                # bail out for now. We could attempt a normal 'git pull' operation but that
+                                # might leave multiple branch in an inconsistent state at the same time.
+                                LOG.warning('%s Fast forward merge not possible for branch ``%s``. Try syncing with upstream manually (pull, push or merge).', gitctl.utils.pretty(proj['name']), local)
+                            else:
+                                # Some other kind of error.
+                                LOG.critical('%s Update failure: %s', gitctl.utils.pretty(proj['name']), stderr)
                         else:
-                            # Some other kind of error.
-                            LOG.critical('%s Update failure: %s', gitctl.utils.pretty(proj['name']), stderr)
-                    else:
-                        updated = True
+                            updated = True
 
-            # Check out the original branch
-            if gitctl.utils.is_sha1(treeish):
-                # In case of a hard-pinned SHA1 we know we can ditch everything so we'll
-                # perform a hard reset to make sure that the following checkout won't fail.
-                repository.git.reset('--hard')
-
-            repository.git.checkout(treeish)
+                repository.git.checkout(treeish)
 
             if ok:
                 if gitctl.utils.is_sha1(treeish) and pinned_at is not None:
