@@ -23,7 +23,7 @@ def is_sha1(treeish):
 
 def pretty(name, justification=40, fill='.'):
     """Returns a left justified representation of ``name``."""
-    return name.ljust(justification, fill)
+    return (name + ' ').ljust(justification, fill)
 
 def project_path(proj, relative=False):
     """Returns the absolute project path unless relative=True, when a path

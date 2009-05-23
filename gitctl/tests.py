@@ -127,7 +127,7 @@ class TestCommandBranch(CommandTestCase):
         
         gitctl.command.gitctl_branch(self.args)
         self.assertEquals(1, len(self.output))
-        self.assertEquals('project.local........................... development', self.output[0])
+        self.assertEquals('project.local .......................... development', self.output[0])
     
     def test_branch__checkout_with_dirty_working_directory(self):
         self.args.list = False
@@ -141,7 +141,7 @@ class TestCommandBranch(CommandTestCase):
         self.failUnless(self.local.is_dirty)
         gitctl.command.gitctl_branch(self.args)
         self.assertEquals(1, len(self.output))
-        self.assertEquals('project.local........................... Dirty working directory. Please commit or stash and try again.', self.output[0])
+        self.assertEquals('project.local .......................... Dirty working directory. Please commit or stash and try again.', self.output[0])
     
     def test_branch__checkout_with_same_target_branch(self):
         self.args.list = False
@@ -152,7 +152,7 @@ class TestCommandBranch(CommandTestCase):
 
         gitctl.command.gitctl_branch(self.args)
         self.assertEquals(1, len(self.output))
-        self.assertEquals('project.local........................... Already at ``development``', self.output[0])
+        self.assertEquals('project.local .......................... Already at ``development``', self.output[0])
     
     def test_branch__checkout_with_nonexisting_branch(self):
         self.args.list = False
@@ -161,7 +161,7 @@ class TestCommandBranch(CommandTestCase):
         self.assertEquals(self.local.active_branch, 'development')
         gitctl.command.gitctl_branch(self.args)
         self.assertEquals(1, len(self.output))
-        self.assertEquals('project.local........................... No such branch: ``non-existing-branch``', self.output[0])
+        self.assertEquals('project.local .......................... No such branch: ``non-existing-branch``', self.output[0])
     
     def test_branch__checkout_success(self):
         self.args.list = False
@@ -173,7 +173,7 @@ class TestCommandBranch(CommandTestCase):
         gitctl.command.gitctl_branch(self.args)
         self.assertEquals('staging', self.local.active_branch)
         self.assertEquals(1, len(self.output))
-        self.assertEquals('project.local........................... Checked out ``staging``', self.output[0])
+        self.assertEquals('project.local .......................... Checked out ``staging``', self.output[0])
 
 class TestCommandUpdate(CommandTestCase):
     """Tests for the ``update`` command."""
@@ -226,8 +226,8 @@ class TestCommandUpdate(CommandTestCase):
 
         # Run update again and assert we got back the changes
         gitctl.command.gitctl_update(self.args)
-        self.assertEquals(['project.local........................... Cloned and checked out ``development``',
-                           'project.local........................... Updated'],
+        self.assertEquals(['project.local .......................... Cloned and checked out ``development``',
+                           'project.local .......................... Updated'],
                           self.output)
         log = local.log('--pretty=oneline').splitlines()
         self.assertEquals(2, len(log))
@@ -284,9 +284,9 @@ treeish = %s
         
         # Run update again and assert we got back the changes
         gitctl.command.gitctl_update(self.args)
-        self.assertEquals(['project.local........................... Cloned and checked out ``%s``' % sha1_first,
-                           'project.local........................... OK',
-                           'project.local........................... Checked out revision ``%s``' % sha1_second],
+        self.assertEquals(['project.local .......................... Cloned and checked out ``%s``' % sha1_first,
+                           'project.local .......................... OK',
+                           'project.local .......................... Checked out revision ``%s``' % sha1_second],
                           self.output)
         log = local.log('--pretty=oneline').splitlines()
         self.assertEquals(2, len(log))
@@ -321,8 +321,8 @@ treeish = %s
 
         # Run update again and assert we got back the changes
         gitctl.command.gitctl_update(self.args)
-        self.assertEquals(['project.local........................... Cloned and checked out ``development``',
-                           'project.local........................... Updated'],
+        self.assertEquals(['project.local .......................... Cloned and checked out ``development``',
+                           'project.local .......................... Updated'],
                           self.output)
         log = local.log('--pretty=oneline').splitlines()
         self.assertEquals(2, len(log))
@@ -360,8 +360,8 @@ treeish = %s
         current_branch = git.Repo(local.git_dir).active_branch
         # Run update again and assert we got back the changes
         gitctl.command.gitctl_update(self.args)
-        self.assertEquals(['project.local........................... Cloned and checked out ``development``',
-                           'project.local........................... Updated'],
+        self.assertEquals(['project.local .......................... Cloned and checked out ``development``',
+                           'project.local .......................... Updated'],
                             self.output)
                           
         # Assert that we are still in the same branch that we started in
@@ -411,8 +411,8 @@ treeish = %s
         current_branch = git.Repo(local.git_dir).active_branch
         # Run update again and assert we got back the changes
         gitctl.command.gitctl_update(self.args)
-        self.assertEquals(['project.local........................... Cloned and checked out ``development``',
-                           'project.local........................... Fast forward merge not possible for branch ``development``. Try syncing with upstream manually (pull, push or merge).'],
+        self.assertEquals(['project.local .......................... Cloned and checked out ``development``',
+                           'project.local .......................... Fast forward merge not possible for branch ``development``. Try syncing with upstream manually (pull, push or merge).'],
                             self.output)
 
         # Assert that we are still in the same branch that we started in
@@ -454,7 +454,7 @@ class TestCommandFetch(CommandTestCase):
                           self.local.rev_parse('origin/development'))
         # Fetch changes from upstream
         gitctl.command.gitctl_fetch(self.args)
-        self.assertEquals('project.local........................... Fetched', self.output[0])
+        self.assertEquals('project.local .......................... Fetched', self.output[0])
         self.failIfEqual(self.local.rev_parse('development'),
                          self.local.rev_parse('origin/development'))
 
@@ -504,7 +504,7 @@ treeish = master
         
         # Assert the third party repositories are skipped
         gitctl.command.gitctl_pending(self.args)
-        self.assertEquals('thirdparty.local........................ Skipping.', self.output[0])
+        self.assertEquals('thirdparty.local ....................... Skipping.', self.output[0])
 
     def test_pending__remote_out_of_sync(self):
         self.args.dev = True
@@ -517,7 +517,7 @@ treeish = master
         
         # Assert that we notice that the remote is out-of-sync.
         gitctl.command.gitctl_pending(self.args)
-        self.assertEquals('project.local........................... Branch ``development`` out of sync with upstream. Run "gitcl update" or pull manually.',
+        self.assertEquals('project.local .......................... Branch ``development`` out of sync with upstream. Run "gitcl update" or pull manually.',
                           self.output[0])
 
     def test_pending__dirty_working_directory(self):
@@ -533,14 +533,14 @@ treeish = master
 
         # Assert that we notice that the working directory is dirty
         gitctl.command.gitctl_pending(self.args)
-        self.assertEquals('project.local........................... Uncommitted local changes.',
+        self.assertEquals('project.local .......................... Uncommitted local changes.',
                           self.output[0])
 
     def test_pending__production_without_pinned_revision(self):
         # By default all the branches are in-sync with each other
         self.args.production = True
         gitctl.command.gitctl_pending(self.args)
-        self.assertEquals('project.local........................... Treeish is not a SHA1 revision: development', self.output[0])
+        self.assertEquals('project.local .......................... Treeish is not a SHA1 revision: development', self.output[0])
 
     def test_pending__production_advanced_over_pinned_versions(self):
         self.args.production = True
@@ -563,13 +563,13 @@ treeish = %s
         self.local.push()
         
         gitctl.command.gitctl_pending(self.args)
-        self.failUnless(self.output[0].startswith('project.local........................... Branch ``production`` is 1 commit(s) ahead of the pinned down version at revision'))
+        self.failUnless(self.output[0].startswith('project.local .......................... Branch ``production`` is 1 commit(s) ahead of the pinned down version at revision'))
 
     def test_pending__staging_ok(self):
         # By default all the branches are in-sync with each other
         self.args.staging = True
         gitctl.command.gitctl_pending(self.args)
-        self.assertEquals('project.local........................... OK', self.output[0])
+        self.assertEquals('project.local .......................... OK', self.output[0])
 
     def test_pending__staging_advanced_over_production(self):
         self.args.staging = True
@@ -586,14 +586,14 @@ treeish = %s
         
         # Assert that we notice the difference
         gitctl.command.gitctl_pending(self.args)
-        self.assertEquals('project.local........................... Branch ``staging`` is 2 commit(s) ahead of ``production``',
+        self.assertEquals('project.local .......................... Branch ``staging`` is 2 commit(s) ahead of ``production``',
                           self.output[0])
 
     def test_pending__development_ok(self):
         # By default all the branches are in-sync with each other
         self.args.dev = True
         gitctl.command.gitctl_pending(self.args)
-        self.assertEquals('project.local........................... OK', self.output[0])
+        self.assertEquals('project.local .......................... OK', self.output[0])
 
     def test_pending__development_advanced_over_staging(self):
         self.args.dev = True
@@ -607,7 +607,7 @@ treeish = %s
         
         # Assert that we notice the difference
         gitctl.command.gitctl_pending(self.args)
-        self.assertEquals('project.local........................... Branch ``development`` is 1 commit(s) ahead of ``staging``',
+        self.assertEquals('project.local .......................... Branch ``development`` is 1 commit(s) ahead of ``staging``',
                           self.output[0])
 
     
@@ -653,7 +653,7 @@ treeish = %s
         # Assert that we notice the difference
         gitctl.command.gitctl_pending(self.args)
         self.assertEquals(2, len(self.output))
-        self.assertEquals('project.local........................... Branch ``development`` is 1 commit(s) ahead of ``staging``',
+        self.assertEquals('project.local .......................... Branch ``development`` is 1 commit(s) ahead of ``staging``',
                           self.output[0])
         self.failUnless('diff --git a/something.py b/something.py' in self.output[1])
 
@@ -675,7 +675,7 @@ class TestCommandStatus(CommandTestCase):
     def test_status__ok(self):
         gitctl.command.gitctl_status(self.args)
         self.assertEquals(1, len(self.output))
-        self.assertEquals('project.local........................... OK', self.output[0])
+        self.assertEquals('project.local .......................... OK', self.output[0])
     
     def test_status__dirty_working_directory(self):
         open(os.path.join(self.local.git_dir, 'make_wd_dirty.txt'), 'w').write('Lorem')
@@ -683,7 +683,7 @@ class TestCommandStatus(CommandTestCase):
         
         gitctl.command.gitctl_status(self.args)
         self.assertEquals(1, len(self.output))
-        self.assertEquals('project.local........................... Uncommitted local changes', self.output[0])
+        self.assertEquals('project.local .......................... Uncommitted local changes', self.output[0])
 
     def test_status__out_of_sync__local_advanced(self):
         open(os.path.join(self.local.git_dir, 'new_file.txt'), 'w').write('Lorem')
@@ -692,7 +692,7 @@ class TestCommandStatus(CommandTestCase):
         
         gitctl.command.gitctl_status(self.args)
         self.assertEquals(1, len(self.output))
-        self.assertEquals('project.local........................... Branch ``development`` out of sync with upstream', self.output[0])
+        self.assertEquals('project.local .......................... Branch ``development`` out of sync with upstream', self.output[0])
 
     def test_status__out_of_sync__remote_advanced(self):
         # Create another local clone, add a file and push to make the remote
@@ -705,7 +705,7 @@ class TestCommandStatus(CommandTestCase):
         
         gitctl.command.gitctl_status(self.args)
         self.assertEquals(1, len(self.output))
-        self.assertEquals('project.local........................... Branch ``development`` out of sync with upstream', self.output[0])
+        self.assertEquals('project.local .......................... Branch ``development`` out of sync with upstream', self.output[0])
         
 
 class TestUtils(unittest.TestCase):
@@ -718,7 +718,7 @@ class TestUtils(unittest.TestCase):
         shutil.rmtree(self.path)
     
     def test_pretty(self):
-        self.assertEquals('foobar....', gitctl.utils.pretty('foobar', 10))
+        self.assertEquals('foobar ...', gitctl.utils.pretty('foobar', 10))
         self.assertEquals('barfoo              ', gitctl.utils.pretty('barfoo', 20, ' '))
 
     def test_project_path__absolute(self):
