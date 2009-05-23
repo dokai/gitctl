@@ -9,6 +9,8 @@ Change history
 **************
 
 2.0a6 (xxxx-xx-xx)
+==================
+
  - Refactored the pretty printer to include a space between the component
    name and the dotted justification. This will make it easier to use the
    output of gitctl in other scripts. [dokai]
