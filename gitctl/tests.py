@@ -195,7 +195,7 @@ class TestCommandUpdate(CommandTestCase):
         # Make sure that we have the local tracking branches set up correctly.
         info = ' '.join(repo.remote('show', 'origin').split())
         self.failUnless(info.startswith('* remote origin'))
-        self.failUnless(info.endswith('Tracked remote branches development production staging'))
+        self.failUnless(info.endswith("Remote branches: development tracked production tracked staging tracked Local branches configured for 'git pull': development merges with remote development production merges with remote production staging merges with remote staging Local refs configured for 'git push': development pushes to development (up to date) production pushes to production (up to date) staging pushes to staging (up to date)"), info)
         # Make sure we have the right branch checked out.
         self.assertEquals('* development', [b.strip() for b in repo.branch().splitlines() if b.startswith('*')][0])
 
@@ -240,6 +240,7 @@ class TestCommandUpdate(CommandTestCase):
         self.args.config = os.path.join(self.container, 'gitctl.cfg')
         self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
         self.args.project = []
+        self.args.verbose = True
 
         # Get the SHA1 checksum for the current head and pin the externals to it.
         sha1_first = self.upstream.rev_parse('HEAD').strip()

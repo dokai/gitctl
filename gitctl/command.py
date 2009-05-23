@@ -115,7 +115,7 @@ def gitctl_branch(args):
                 branches = set([b.name for b in repository.branches])
                 if branch not in branches:
                     LOG.warning('%s No such branch: ``%s``' % (gitctl.utils.pretty(proj['name']), branch))
-                elif branch == repository.active_branch:
+                elif branch == repository.active_branch and args.verbose:
                     LOG.info('%s Already at ``%s``' % (gitctl.utils.pretty(proj['name']), branch))
                 else:
                     repository.git.checkout(branch)
@@ -137,7 +137,7 @@ def gitctl_update(args):
             repository.git.fetch()
             
             if repository.is_dirty:
-                LOG.warning('%s Dirty working directory. Please commit or stash and try again.', gitctl.utils.pretty(proj['name']))
+                LOG.info('%s Dirty working directory. Please commit or stash and try again.', gitctl.utils.pretty(proj['name']))
                 continue
 
             ok = True
@@ -194,12 +194,13 @@ def gitctl_update(args):
                     # If we're using pinned down revisions we only report changes when the
                     # explicit revision was changed, even if the branches were updated.
                     if pinned_at == proj['treeish']:
-                        LOG.info('%s OK', gitctl.utils.pretty(proj['name']))
+                        if args.verbose:
+                            LOG.info('%s OK', gitctl.utils.pretty(proj['name']))
                     else:
                         LOG.info('%s Checked out revision ``%s``', gitctl.utils.pretty(proj['name']), treeish)
                 elif updated:
                     LOG.info('%s Updated', gitctl.utils.pretty(proj['name']))
-                else:
+                elif args.verbose:
                     LOG.info('%s OK', gitctl.utils.pretty(proj['name']))
 
         else:
@@ -241,7 +242,7 @@ def gitctl_status(args):
                 if len(repository.diff(remote, local).strip()) > 0:
                     LOG.info('%s Branch ``%s`` out of sync with upstream', gitctl.utils.pretty(proj['name']), local)
                     uptodate = False
-        if uptodate:
+        if uptodate and args.verbose:
             LOG.info('%s OK', gitctl.utils.pretty(proj['name']))
 
 def gitctl_pending(args):
@@ -269,7 +270,7 @@ def gitctl_pending(args):
         if not assert_branch(config['development-branch'], quiet=True):
             # This looks to be a package that does not share our common repository layout
             # which is possible with 3rd party packages etc. We can safely ignore it.
-            if not args.show_config:
+            if not args.show_config and args.verbose:
                 LOG.info('%s Skipping.', gitctl.utils.pretty(proj['name']))
             continue
 
@@ -352,7 +353,7 @@ def gitctl_pending(args):
                 if args.diff:
                     LOG.info(repository.git.log('--stat', '--summary', '-p', from_, to))
         else:
-            if not args.show_config:
+            if args.verbose and not args.show_config:
                 LOG.info('%s OK', gitctl.utils.pretty(proj['name']))
         
     if args.show_config and args.production:

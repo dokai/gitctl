@@ -13,6 +13,11 @@ Change history
    name and the dotted justification. This will make it easier to use the
    output of gitctl in other scripts. [dokai]
 
+ - Added a new --verbose global option. Providing the --verbose option will
+   give the same output as 2.0a5. Without the option the gitctl will only
+   report changed components which will reduce the output significantly and
+   make it easier to see what changed.
+
  - Print normal program output to stdout and only errors to stderr. [dokai]
 
  - When updating a hard-pinned revision perform a "git reset --hard" to enforce

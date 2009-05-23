@@ -21,10 +21,13 @@ parser.add_argument('--config', type=lambda x: [x],
 parser.add_argument('--externals',
     help='Location of the externals configuration file. Defaults to '
          '$PWD/gitexternals.cfg')
+parser.add_argument('--verbose', action='store_true')
 parser.set_defaults(
+    verbose=False,
     externals='gitexternals.cfg',
     config=[os.path.expanduser('~/.gitctl.cfg'),
             os.path.abspath('gitctl.cfg')])
+
 
 # Subparser for each command
 cmd_parsers = parser.add_subparsers(help='Commands')
