@@ -13,6 +13,8 @@ Change history
    name and the dotted justification. This will make it easier to use the
    output of gitctl in other scripts. [dokai]
 
+ - Print normal program output to stdout and only errors to stderr. [dokai]
+
  - When updating a hard-pinned revision perform a "git reset --hard" to enforce
    the revision. This fixes some
    issue where the working directory was in an inconsistent state and the
