@@ -10,6 +10,9 @@ Change history
 
 2.0a6 (xxxx-xx-xx)
 ==================
+ 
+ - Refactored the "gitctl status" command to give more elaborate information
+   about the status of the repository. [dokai]
 
  - Refactored the pretty printer to include a space between the component
    name and the dotted justification. This will make it easier to use the
