@@ -80,9 +80,9 @@ def commits_between(repository, from_, to, verbose=True):
     If the return value is an empty list ``to`` has been merged to ``from_``.
     """
     if verbose:
-        format = r'--pretty=format:- [%h] %s [%an; %ar]'
+        format = r'--pretty=format:* [%h] %s [%an; %ar]'
     else:
-        format = r'--pretty=format:- [%h] %s'
+        format = r'--pretty=format:* [%h] %s'
     
     return [line.strip()
             for line
@@ -113,7 +113,7 @@ def show_branch(repository, branch_info, all_branches, verbose=False, commit_lim
         """Prints the header for the current branch if necessary."""
         if not already_printed:
             output.append('Branch ``%s``' % branch_info['name'])
-        return not already_printed
+        return True
 
     push_commits = commits_between(repository, branch_info['remote_branch'], branch_info['local_branch'])
     pull_commits = commits_between(repository, branch_info['local_branch'], branch_info['remote_branch'])
@@ -122,16 +122,16 @@ def show_branch(repository, branch_info, all_branches, verbose=False, commit_lim
     if len(push_commits) == len(pull_commits) == 0:
         if verbose:
             header_printed = header(header_printed)
-            output.append('  * is up-to-date and in sync with upstream')
+            output.append('  - is up-to-date and in sync with upstream')
     elif len(push_commits) > 0:
         header()
         action = local_remote_out_of_sync and 'pushed after rebase / merge' or 'pushed'
-        output.append('  * has %s new commit(s) that need to be %s.' % (len(push_commits), action))
+        output.append('  - has %s new commit(s) that need to be %s.' % (len(push_commits), action))
         output.extend(show_commits(push_commits, limit=commit_limit))
     elif len(pull_commits) > 0:
         header_printed = header(header_printed)
         action = len(push_commits) == 0 and 'merged' or 'rebased / merged'
-        output.append('  * is behind upstream %s commit(s) that need to be %s.' % (len(pull_commits), action))
+        output.append('  - is behind upstream %s commit(s) that need to be %s.' % (len(pull_commits), action))
         output.extend(show_commits(pull_commits, limit=commit_limit))
 
     is_feature_branch = lambda b: b not in ('primacontrol/development', 'primacontrol/demo', 'primacontrol/production')
@@ -148,10 +148,10 @@ def show_branch(repository, branch_info, all_branches, verbose=False, commit_lim
             if len(ahead) == 0:
                 if verbose:
                     header_printed = header(header_printed)
-                    output.append('  * is merged into %s' % branch_name)
+                    output.append('  - is merged into %s' % branch_name)
             else:
                 header_printed = header(header_printed)
-                output.append('  * is %s commit(s) ahead of ``%s``.' % (len(ahead), branch_name))
+                output.append('  - is %s commit(s) ahead of ``%s``.' % (len(ahead), branch_name))
                 output.extend(show_commits(ahead, limit=commit_limit))
 
     # Features branches, which are only inspected in relation to the development branch
@@ -170,15 +170,15 @@ def show_branch(repository, branch_info, all_branches, verbose=False, commit_lim
             if len(local_ahead) == len(remote_ahead) == 0:
                 if verbose:
                     header_printed = header(header_printed)
-                    output.append('  * has a completed feature branch ``%s`` which is merged and pushed upstream.' % branch['name'])
+                    output.append('  - has a completed feature branch ``%s`` which is merged and pushed upstream.' % branch['name'])
             elif len(local_ahead) == 0:
                 header_printed = header(header_printed)
-                output.append('  * has a completed feature branch ``%s`` which is waiting to be pushed upstream' % branch['name'])
+                output.append('  - has a completed feature branch ``%s`` which is waiting to be pushed upstream' % branch['name'])
             else:
                 behind = commits_between(repository, head, branch.get('local_branch', branch.get('remote_branch')))
                 ahead = remote_only and remote_ahead or local_ahead
                 header_printed = header(header_printed)
-                output.append('  * has a feature branch ``%s`` with %s waiting for merge.' % (branch['name'], ahead_behind(ahead, behind)))
+                output.append('  - has a feature branch ``%s`` with %s waiting for merge.' % (branch['name'], ahead_behind(ahead, behind)))
                 output.extend(show_commits(ahead, limit=commit_limit))
 
     if local_remote_out_of_sync:
