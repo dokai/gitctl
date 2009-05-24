@@ -64,8 +64,12 @@ parser_status.add_argument('--no-fetch', action='store_true',
 parser_status.add_argument('project', nargs='*',
     help='Name of a project to check. If omitted all projects in the '
          'externals configuration will be checked.')
+parser_status.add_argument('--commits', action='store_true', help='Displays a summary of the commits that differ a branch from another')
+parser_status.add_argument('--limit', type=int, help='Limits the number of commits shown in the summary. Ignored with --commits.')
 parser_status.set_defaults(
     func=gitctl.command.gitctl_status,
+    commits=False,
+    limit=-1,
     no_fetch=False)
 
 # 'gitctl branch'

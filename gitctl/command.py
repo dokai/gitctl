@@ -6,6 +6,7 @@ import git
 import logging
 
 import gitctl.utils
+import gitctl.wtf
 
 LOG = logging.getLogger('gitctl')
 
@@ -223,6 +224,13 @@ def gitctl_status(args):
     """Checks the status of all external projects."""
     config = gitctl.utils.parse_config(args.config)
     projects = gitctl.utils.parse_externals(args.externals)
+    
+    # By default do not show commits
+    commit_limit = 0
+    if args.commits:
+        commit_limit = None
+        if args.limit > 0:
+            commit_limit = args.limit
 
     for proj in gitctl.utils.filter_projects(projects, set(args.project)):
         repository = git.Repo(gitctl.utils.project_path(proj))
@@ -230,20 +238,24 @@ def gitctl_status(args):
             # Fetch upstream
             repository.git.fetch(config['upstream'])
 
+        output = []
+        branches = gitctl.wtf.branch_structure(repository)
+        for branch_name in config['development-branch'], config['staging-branch'], config['production-branch']:
+            if branch_name in branches:
+                output.extend(gitctl.wtf.show_branch(repository, branches[branch_name], branches, verbose=args.verbose, commit_limit=commit_limit))
+
         if repository.is_dirty:
-            LOG.info('%s Uncommitted local changes', gitctl.utils.pretty(proj['name']))
-            continue
-            
-        remote_branches = set(repository.git.branch('-r').split())
+            output.append('[!] Working directory has uncommitted changes')
+
+        if len(repository.git.diff_index('--cached', 'HEAD').strip()) > 0:
+            output.append('[!] Working directory has added but uncommitted files')
         
-        uptodate = True
-        for remote, local in config['branches']:
-            if remote in remote_branches:
-                if len(repository.diff(remote, local).strip()) > 0:
-                    LOG.info('%s Branch ``%s`` out of sync with upstream', gitctl.utils.pretty(proj['name']), local)
-                    uptodate = False
-        if uptodate and args.verbose:
-            LOG.info('%s OK', gitctl.utils.pretty(proj['name']))
+        if len(output) > 0:
+            LOG.info('')
+            LOG.info('-' * len(proj['name']))
+            LOG.info(proj['name'])
+            LOG.info('-' * len(proj['name']))
+            LOG.info('\n'.join(output))
 
 def gitctl_pending(args):
     """Checks for pending changes between two consecutive states in our
