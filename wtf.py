@@ -125,67 +125,49 @@ def ahead_behind(ahead, behind):
         len(behind) > 0 and '%s commit(s) behind' % len(behind) or None)))
 
 def show_branch(repository, branch_info, all_branches, verbose=True, with_commits=True):
-    have_both = 'local_branch' in branch_info and 'remote_branch' in branch_info
-    push_commits = tuple()
-    pull_commits = tuple()
-    local_remote_out_of_sync = False
     print 
     print branch_info['name']
     print '-' * len(branch_info['name'])
 
-    if have_both:
-        push_commits = commits_between(repository, branch_info['remote_branch'], branch_info['local_branch'])
-        pull_commits = commits_between(repository, branch_info['local_branch'], branch_info['remote_branch'])
-        local_remote_out_of_sync = len(push_commits) > 0 and len(pull_commits) > 0
-    
-    if 'local_branch' in branch_info:
-        #print 'Local branch:', branch_info['local_branch']
-    
-        if have_both:
-            if len(push_commits) == 0:
-                if verbose:
-                    print '%s in sync with remote' % branch_info['local_branch']
-            else:
-                action = local_remote_out_of_sync and 'push after rebase / merge' or 'push'
-                print '%s NOT in sync with remote (needs %s)' % (branch_info['local_branch'], action)
-                if with_commits:
-                    show_commits(push_commits)
-    
-    if 'remote_branch' in branch_info:
-        #print 'Remote branch: %s (%s)' % (branch_info['remote_branch'], branch_info['remote_url'])
-        
-        if have_both:
-            name = '%(remote_branch)s (%(remote_url)s)' % branch_info
-            if len(pull_commits) == 0:
-                if verbose:
-                    print '%s in sync with local' % name
-            else:
-                action = len(push_commits) == 0 and 'merge' or 'rebase / merge'
-                print '%s NOT in sync with local (needs %s)' % (name, action)
-                if with_commits:
-                    show_commits(pull_commits)
+    push_commits = commits_between(repository, branch_info['remote_branch'], branch_info['local_branch'])
+    pull_commits = commits_between(repository, branch_info['local_branch'], branch_info['remote_branch'])
+    local_remote_out_of_sync = len(push_commits) > 0 and len(pull_commits) > 0
+
+    if len(push_commits) == len(pull_commits) == 0:
+        if verbose:
+            print '  * is up-to-date and in sync with upstream'
+    elif len(push_commits) > 0:
+        action = local_remote_out_of_sync and 'pushed after rebase / merge' or 'pushed'
+        print '  * has %s new commit(s) that need to be %s.' % (len(push_commits), action)
+        if with_commits:
+            show_commits(push_commits)
+    elif len(pull_commits) > 0:
+        action = len(push_commits) == 0 and 'merged' or 'rebased / merged'
+        print '  * is behind upstream %s commit(s) that need to be %s.' % (len(pull_commits), action)
+        if with_commits:
+            show_commits(pull_commits)
 
     is_feature_branch = lambda b: b not in ('primacontrol/development', 'primacontrol/demo', 'primacontrol/production')
     feature_branches = [b for b in all_branches if is_feature_branch(b)]
     main_branches = [b for b in all_branches if not is_feature_branch(b)]
 
     if len(main_branches) > 0:
-        print 'Main branches:'
+        #print 'Main branches:'
         for branch_name in sorted(main_branches):
             if branch_name == branch_info['name']:
                 continue
             branch = all_branches[branch_name]
-            local_only = 'remote_branch' not in branch
             ahead = commits_between(repository, branch_name, branch_info.get('local_branch', branch_info.get('remote_branch')))
             if len(ahead) == 0:
-                print '  [x] merged into %s' % branch_name
+                if verbose:
+                    print '  * is merged into %s' % branch_name
             else:
-                print '  [!] NOT merged into %s (%s commit(s) ahead)' % (branch_name, len(ahead))
+                print '  * is %s commit(s) ahead of ``%s``.' % (len(ahead), branch_name)
                 if with_commits:
                     show_commits(ahead)
 
     if len(feature_branches) > 0 and branch_info['name'] == 'primacontrol/development':
-        print 'Feature branches:'
+        #print 'Feature branches:'
         for branch_name in feature_branches:
             branch = all_branches[branch_name]
             local_only = 'remote_branch' not in branch
@@ -199,13 +181,13 @@ def show_branch(repository, branch_info, all_branches, verbose=True, with_commit
             
             if len(local_ahead) == len(remote_ahead) == 0:
                 if verbose:
-                    print '  Feature branch %s is merged into %s and pushed upstream.' % (branch['name'], branch_info['name'])
+                    print '  * has a completed feature branch ``%s`` which is merged and pushed upstream.' % branch['name']
             elif len(local_ahead) == 0:
-                print '  Feature branch %s merged into %s only locally and waiting to be pushed' % (branch['name'], branch_info['name'])
+                print '  * has a completed feature branch ``%s`` which is waiting to be pushed upstream' % branch['name']
             else:
                 behind = commits_between(repository, head, branch.get('local_branch', branch.get('remote_branch')))
                 ahead = remote_only and remote_ahead or local_ahead
-                print '  Feature branch %s is NOT merged into %s. %s.' % (branch['name'], branch_info['name'], ahead_behind(ahead, behind))
+                print '  * has a feature branch ``%s`` with %s waiting for merge.' % (branch['name'], ahead_behind(ahead, behind))
                 if with_commits:
                     show_commits(ahead)
 
