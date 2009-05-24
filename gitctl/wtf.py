@@ -9,7 +9,10 @@ RE_CONFIG_REMOTE_MERGE = re.compile(r'branch\.([^.]*)\.merge (?:(?:refs/)?heads/
 RE_REF_LOCAL_BRANCH = re.compile(r'^heads/(.+)$')
 RE_REF_REMOTE_BRANCH = re.compile(r'^remotes/([^/]+)/(.+)$')
 
-def all_branches(repository):
+def branch_structure(repository):
+    """Returns a dictionary containing information about the branch structure
+    in the given ``repository``.
+    """
     # A mapping of remote names to remote URLs
     remote_urls = {}
     for line in repository.git.config('--get-regexp', '^remote.*.url', with_exceptions=False).splitlines():
@@ -83,6 +86,7 @@ def commits_between(repository, from_, to, verbose=False):
             if line.strip()]
 
 def show_commits(commits, prefix="    ", limit=5):
+    """Displays commit information with an optional limit."""
     if limit is None:
         limit = len(commits)
     for commit in commits[:limit]:
@@ -167,7 +171,7 @@ def show_branch(repository, branch_info, all_branches, verbose=True, with_commit
         print 'Local and remote branches have diverged. A merge will occur unless you rebase.'
         
 def repository_status(repository):
-    branches = all_branches(repository)
+    branches = branch_structure(repository)
     for branch in ('primacontrol/development', 'primacontrol/demo', 'primacontrol/production'):
         show_branch(repository, branches[branch], branches)
 
