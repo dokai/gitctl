@@ -9,35 +9,6 @@ RE_CONFIG_REMOTE_MERGE = re.compile(r'branch\.([^.]*)\.merge (?:(?:refs/)?heads/
 RE_REF_LOCAL_BRANCH = re.compile(r'^heads/(.+)$')
 RE_REF_REMOTE_BRANCH = re.compile(r'^remotes/([^/]+)/(.+)$')
 
-def remotes(repository):
-    """Returns a dictionary of remote URLs keyed by the remote name."""
-    urls = {}
-    for line in repository.git.config('--get-regexp', '^remote.*.url', with_exceptions=False).splitlines():
-        match = RE_CONFIG_REMOTE_URL.search(line.strip())
-        if match is not None:
-            urls[match.group(1)] = match.group(2)
-    
-    return urls
-
-def followed_branches(repository):
-    """Returns a dictionary..."""
-    result = {}
-    remote_urls = remotes(repository)
-    for line in repository.git.config('--get-regexp', '^branch.', with_exceptions=False).splitlines():
-        remote_match = RE_CONFIG_REMOTE_BRANCH.search(line.strip())
-        
-        if remote_match is not None:
-            result.setdefault(remote_match.group(1), {}).update(
-                remote=remote_match.group(2),
-                remote_url=remote_urls[remote_match.group(2)])
-        else:
-            merge_match = RE_CONFIG_REMOTE_MERGE.search(line.strip())
-            if merge_match is not None:
-                result.setdefault(merge_match.group(1), {}).update(
-                    remote_mergepoint=merge_match.group(2))
-
-    return result
-
 def all_branches(repository):
     # A mapping of remote names to remote URLs
     remote_urls = {}
