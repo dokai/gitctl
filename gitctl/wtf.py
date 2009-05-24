@@ -3,7 +3,6 @@
 This module is an adaptation of the ``git-wtf`` Ruby script written by William
 Morgan and contributors (see http://git-wt-commit.rubyforge.org/#git-wtf).
 """
-import git
 import re
 
 RE_CONFIG_REMOTE_URL = re.compile(r'^remote\.([^.]+)\.url (.+)$')
@@ -124,7 +123,7 @@ def show_branch(repository, branch_info, all_branches, verbose=False, commit_lim
             header_printed = header(header_printed)
             output.append('  - is up-to-date and in sync with upstream')
     elif len(push_commits) > 0:
-        header()
+        header_printed = header(header_printed)
         action = local_remote_out_of_sync and 'pushed after rebase / merge' or 'pushed'
         output.append('  - has %s new commit(s) that need to be %s.' % (len(push_commits), action))
         output.extend(show_commits(push_commits, limit=commit_limit))
@@ -183,17 +182,6 @@ def show_branch(repository, branch_info, all_branches, verbose=False, commit_lim
 
     if local_remote_out_of_sync:
         header_printed = header(header_printed)
-        output.append('[!] Local and remote branches have diverged. A merge will occur unless you rebase.')
+        output.append('  [!] Local and remote branches have diverged. A merge will occur unless you rebase.')
     
     return output
-
-def repository_status(repository):
-    branches = branch_structure(repository)
-    for branch in ('primacontrol/development', 'primacontrol/demo', 'primacontrol/production'):
-        show_branch(repository, branches[branch], branches)
-
-if __name__ == '__main__':
-    #pprint(remotes(git.Repo('.')))
-    #pprint(followed_branches(git.Repo('.')))
-    #repository_status(git.Repo('/Users/dokai/Software/Development/primacontrol.buildout'))
-    repository_status(git.Repo('/Users/dokai/Software/Development/primacontrol.buildout/products/PrimaControlSite'))
