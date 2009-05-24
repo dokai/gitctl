@@ -10,6 +10,7 @@ import git
 import gitctl
 import gitctl.command
 import gitctl.utils
+import gitctl.wtf
 
 def join(*parts):
     return os.path.realpath(os.path.abspath(os.path.join(*parts)))
@@ -858,6 +859,70 @@ treeish = master
 
         self.assertEquals(projects, gitctl.utils.parse_externals(ext))
 
+class TestWTF(unittest.TestCase):
+    """Test for the wtf helpers."""
+    
+    def test_branch_structure(self):
+        pass
+    
+    def test_commits_between(self):
+        repo_path = tempfile.mkdtemp()
+        repo = git.Git(repo_path)
+        repo.init()
+        
+        open(join(repo_path, 'foobar.py'), 'w').write('import sha')
+        repo.add('foobar.py')
+        repo.commit('-m', 'first commit')
+
+        open(join(repo_path, 'foobar.py'), 'w').write('import md5')
+        repo.add('foobar.py')
+        repo.commit('-m', 'second commit')
+
+        open(join(repo_path, 'foobar.py'), 'w').write('import sha')
+        repo.add('foobar.py')
+        repo.commit('-m', 'third commit')
+        
+        commits = gitctl.wtf.commits_between(git.Repo(repo_path), 'HEAD^^', 'HEAD')
+        self.assertEquals(2, len(commits))
+        self.failUnless('third commit' in commits[0])
+        self.failUnless('second commit' in commits[1])
+    
+    def test_show_commits__no_limit(self):
+        commits = 'commit1 commit2 commit3 commit4'.split()
+        self.assertEquals(gitctl.wtf.show_commits(commits, limit=None),
+            ['    commit1', '    commit2', '    commit3', '    commit4'])
+    
+    def test_show_commits__custom_prefix(self):
+        commits = 'commit1 commit2 commit3 commit4'.split()
+        self.assertEquals(gitctl.wtf.show_commits(commits, prefix='> ', limit=None),
+            ['> commit1', '> commit2', '> commit3', '> commit4'])
+    
+    def test_show_commits__limit_less_than_commits(self):
+        commits = 'commit1 commit2 commit3 commit4'.split()
+        self.assertEquals(gitctl.wtf.show_commits(commits, limit=2),
+            ['    commit1', '    commit2', '    ... and 2 more'])
+    
+    def test_show_commits__limit_greater_than_commits(self):
+        commits = 'commit1 commit2 commit3 commit4'.split()
+        self.assertEquals(gitctl.wtf.show_commits(commits, limit=10),
+            ['    commit1', '    commit2', '    commit3', '    commit4'])
+    
+    def test_ahead_behind__both(self):
+        self.assertEquals(gitctl.wtf.ahead_behind(range(3), range(4)),
+            '3 commit(s) ahead; 4 commit(s) behind')
+
+    def test_ahead_behind__ahead_only(self):
+        self.assertEquals(gitctl.wtf.ahead_behind(range(3), []), '3 commit(s) ahead')
+
+    def test_ahead_behind__behind_only(self):
+        self.assertEquals(gitctl.wtf.ahead_behind([], range(3)), '3 commit(s) behind')
+
+    def test_ahead_behind__neither(self):
+        self.assertEquals(gitctl.wtf.ahead_behind([], []), '')
+    
+    def test_show_branch(self):
+        pass
+
 def test_suite():
     return unittest.TestSuite([
             unittest.makeSuite(TestCommandStatus),
@@ -866,4 +931,5 @@ def test_suite():
             unittest.makeSuite(TestCommandUpdate),
             unittest.makeSuite(TestCommandBranch),
             unittest.makeSuite(TestUtils),
+            unittest.makeSuite(TestWTF),
             ])
