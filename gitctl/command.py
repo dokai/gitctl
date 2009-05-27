@@ -309,9 +309,8 @@ def gitctl_pending(args):
                 proj['treeish'] = to
             else:
                 commits = len(repository.git.log('--pretty=oneline', '%s..%s' % (from_, to)).splitlines())
-                if args.production:
-                    LOG.info('%s Branch ``%s`` is %s commit(s) ahead of the pinned down version at revision %s',
-                             gitctl.utils.pretty(proj['name']), config['production-branch'], commits, to)
+                LOG.info('%s Branch ``%s`` is %s commit(s) ahead at revision %s',
+                         gitctl.utils.pretty(proj['name']), config['production-branch'], commits, to)
         else:
             if args.verbose and not args.show_config:
                 LOG.info('%s OK', gitctl.utils.pretty(proj['name']))
