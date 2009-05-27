@@ -473,9 +473,6 @@ class TestCommandPending(CommandTestCase):
         self.args = mock.Mock()
         self.args.config = os.path.join(self.container, 'gitctl.cfg')
         self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
-        self.args.production = False
-        self.args.staging = False
-        self.args.dev = False
         self.args.show_config = False
         self.args.diff = False
 
@@ -508,20 +505,6 @@ treeish = master
         gitctl.command.gitctl_pending(self.args)
         self.assertEquals('thirdparty.local ....................... Skipping.', self.output[0])
 
-    def test_pending__remote_out_of_sync(self):
-        self.args.dev = True
-        
-        # Create a new commit in the development branch, but don't push it upstream.
-        self.local.checkout('development')
-        open(join(self.local.git_dir, 'something.py'), 'w').write('import sha\n')
-        self.local.add('something.py')
-        self.local.commit('-m', 'Important')
-        
-        # Assert that we notice that the remote is out-of-sync.
-        gitctl.command.gitctl_pending(self.args)
-        self.assertEquals('project.local .......................... Branch ``development`` out of sync with upstream. Run "gitcl update" or pull manually.',
-                          self.output[0])
-
     def test_pending__dirty_working_directory(self):
         self.args.dev = True
         
@@ -540,13 +523,11 @@ treeish = master
 
     def test_pending__production_without_pinned_revision(self):
         # By default all the branches are in-sync with each other
-        self.args.production = True
         gitctl.command.gitctl_pending(self.args)
         self.assertEquals('project.local .......................... Treeish is not a SHA1 revision: development', self.output[0])
 
     def test_pending__production_advanced_over_pinned_versions(self):
-        self.args.production = True
-        
+
         # Create a new gitexternals.cfg configuration that uses a pinned version
         pinned = self.local.rev_parse('production').strip()
         open(join(self.container, 'gitexternals.cfg'), 'w').write("""
@@ -567,52 +548,6 @@ treeish = %s
         gitctl.command.gitctl_pending(self.args)
         self.failUnless(self.output[0].startswith('project.local .......................... Branch ``production`` is 1 commit(s) ahead of the pinned down version at revision'))
 
-    def test_pending__staging_ok(self):
-        # By default all the branches are in-sync with each other
-        self.args.staging = True
-        gitctl.command.gitctl_pending(self.args)
-        self.assertEquals('project.local .......................... OK', self.output[0])
-
-    def test_pending__staging_advanced_over_production(self):
-        self.args.staging = True
-        
-        # Create a new commits in the staging branch
-        self.local.checkout('staging')
-        open(join(self.local.git_dir, 'something.py'), 'w').write('import sha\n')
-        self.local.add('something.py')
-        self.local.commit('-m', 'Important')
-        open(join(self.local.git_dir, 'other.py'), 'w').write('import md5\n')
-        self.local.add('other.py')
-        self.local.commit('-m', 'Monumental')
-        self.local.push()
-        
-        # Assert that we notice the difference
-        gitctl.command.gitctl_pending(self.args)
-        self.assertEquals('project.local .......................... Branch ``staging`` is 2 commit(s) ahead of ``production``',
-                          self.output[0])
-
-    def test_pending__development_ok(self):
-        # By default all the branches are in-sync with each other
-        self.args.dev = True
-        gitctl.command.gitctl_pending(self.args)
-        self.assertEquals('project.local .......................... OK', self.output[0])
-
-    def test_pending__development_advanced_over_staging(self):
-        self.args.dev = True
-        
-        # Create a new commit in the development branch
-        self.local.checkout('development')
-        open(join(self.local.git_dir, 'something.py'), 'w').write('import sha\n')
-        self.local.add('something.py')
-        self.local.commit('-m', 'Important')
-        self.local.push()
-        
-        # Assert that we notice the difference
-        gitctl.command.gitctl_pending(self.args)
-        self.assertEquals('project.local .......................... Branch ``development`` is 1 commit(s) ahead of ``staging``',
-                          self.output[0])
-
-    
     def test_pending__show_config(self):
         self.args.production = True
         self.args.show_config = True
@@ -636,28 +571,9 @@ treeish = %s
         # Get the SHA1 of the HEAD of production
         head = self.local.rev_parse('production').strip()
 
-        
         gitctl.command.gitctl_pending(self.args)
         self.assertEquals(1, len(self.output))
         self.failUnless(self.output[0].strip().endswith(head))
-    
-    def test_pending__diff(self):
-        self.args.dev = True
-        self.args.diff = True
-        
-        # Create a new commit in the development branch
-        self.local.checkout('development')
-        open(join(self.local.git_dir, 'something.py'), 'w').write('import sha\n')
-        self.local.add('something.py')
-        self.local.commit('-m', 'Important')
-        self.local.push()
-        
-        # Assert that we notice the difference
-        gitctl.command.gitctl_pending(self.args)
-        self.assertEquals(2, len(self.output))
-        self.assertEquals('project.local .......................... Branch ``development`` is 1 commit(s) ahead of ``staging``',
-                          self.output[0])
-        self.failUnless('diff --git a/something.py b/something.py' in self.output[1])
 
 class TestCommandStatus(CommandTestCase):
     """Tests for the ``status`` command."""

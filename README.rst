@@ -11,6 +11,13 @@ Change history
 2.0a6 (xxxx-xx-xx)
 ==================
  
+ - Refactored the "gitctl pending" command to support only the comparison
+   between the pinned down revisions in the externals configuration and the
+   HEADs of the production branches. In practice this means the the former
+   --production switch is the default behavior and the --production, --staging
+   and --dev options have been removed. The refactored "gitctl status"
+   replaces the former functionality. [dokai]
+ 
  - Refactored the "gitctl status" command to give more elaborate information
    about the status of the repository. [dokai]
 

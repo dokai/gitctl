@@ -279,7 +279,7 @@ def gitctl_pending(args):
                 return False
                 
         
-        if not assert_branch(config['development-branch'], quiet=True):
+        if not assert_branch(config['production-branch'], quiet=True):
             # This looks to be a package that does not share our common repository layout
             # which is possible with 3rd party packages etc. We can safely ignore it.
             if not args.show_config and args.verbose:
@@ -295,55 +295,16 @@ def gitctl_pending(args):
         if not args.no_fetch:
             repository.git.fetch(config['upstream'])
 
-        # Check for out-of-sync remote branches in the staging / development mode.
-        # For production mode it doesn't make sense since we're using HEADless
-        # checkouts and the branches are not kept in sync with upstream.
-        if not args.production:
-            skip_project = False
-            for remote, local in config['branches']:
-                if remote in remote_branches:
-                    if len(repository.git.diff(remote, local).strip()) > 0:
-                        LOG.warning('%s Branch ``%s`` out of sync with upstream. Run "gitcl update" or pull manually.',
-                                    gitctl.utils.pretty(proj['name']), local)
-                        skip_project = True
-            if skip_project:
-                continue
-        
-        # Get actual versions of the trees to be compared.
-        if args.production:
-            # Compare the the pinned down version against the HEAD of the
-            # production branch
-            if not assert_branch(config['production-branch']):
-                continue
-                
-            if not gitctl.utils.is_sha1(proj['treeish']):
-                LOG.warning('%s Treeish is not a SHA1 revision: %s', gitctl.utils.pretty(proj['name']), proj['treeish'])
-                continue
-            
-            from_ = repository.git.rev_parse(proj['treeish'])
-            to = repository.git.rev_parse('%s/%s' % (config['upstream'], config['production-branch']))
-        elif args.staging:
-
-            if not assert_branch(config['production-branch']):
-                continue
-            if not assert_branch(config['staging-branch']):
-                continue
-
-            from_ = repository.git.rev_parse(config['production-branch'])
-            to = repository.git.rev_parse(config['staging-branch'])
-        elif args.dev:
-
-            if not assert_branch(config['development-branch']):
-                continue
-            if not assert_branch(config['staging-branch']):
-                continue
-
-            from_ = repository.git.rev_parse(config['staging-branch'])
-            to = repository.git.rev_parse(config['development-branch'])
+        if not gitctl.utils.is_sha1(proj['treeish']):
+            LOG.warning('%s Treeish is not a SHA1 revision: %s', gitctl.utils.pretty(proj['name']), proj['treeish'])
+            continue
+    
+        from_ = repository.git.rev_parse(proj['treeish'])
+        to = repository.git.rev_parse('%s/%s' % (config['upstream'], config['production-branch']))
         
         if from_ != to:
             # The comparison branch has advanced.
-            if args.show_config and args.production:
+            if args.show_config:
                 # Update the treeish to the latest version in the comparison branch.
                 proj['treeish'] = to
             else:
@@ -351,24 +312,11 @@ def gitctl_pending(args):
                 if args.production:
                     LOG.info('%s Branch ``%s`` is %s commit(s) ahead of the pinned down version at revision %s',
                              gitctl.utils.pretty(proj['name']), config['production-branch'], commits, to)
-                else:
-                    if args.staging:
-                        b1 = config['staging-branch']
-                        b2 = config['production-branch']
-                    elif args.dev:
-                        b1 = config['development-branch']
-                        b2 = config['staging-branch']
-                        
-                    LOG.info('%s Branch ``%s`` is %s commit(s) ahead of ``%s``',
-                             gitctl.utils.pretty(proj['name']), b1, commits, b2)
-                    
-                if args.diff:
-                    LOG.info(repository.git.log('--stat', '--summary', '-p', from_, to))
         else:
             if args.verbose and not args.show_config:
                 LOG.info('%s OK', gitctl.utils.pretty(proj['name']))
         
-    if args.show_config and args.production:
+    if args.show_config:
         LOG.info(gitctl.utils.generate_externals(projects))
 
 __all__ = ['gitctl_create', 'gitctl_fetch', 'gitctl_update', 'gitctl_status',

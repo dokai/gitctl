@@ -90,34 +90,16 @@ parser_branch.set_defaults(
 
 # 'gitctl pending'
 parser_pending = cmd_parsers.add_parser('pending',
-    help='Checks if there are any pending changes between two consecutive states '
-         'in the workflow. ')
-parser_pending.add_argument('--dev', action='store_true',
-    help='Shows which projects have pending changes in the development branch '
-         'that are missing from the staging branch. This is the default mode '
-         'if one is not specified.')
-parser_pending.add_argument('--staging', action='store_true',
-    help='Shows which projects have pending changes in the staging branch that '
-         'are missing from the production branch.')
-parser_pending.add_argument('--production', action='store_true',
-    help='Shows which projects have pending changes in their production '
-         'branch that are newer than the pinned down versions. This only '
-         'makes sense if run inside the production buildout.')
-parser_pending.add_argument('--diff', action='store_true',
-    help='Displays the diff of changes.')
+    help='Checks if there are any pending changes in the production branches '
+         'compared to the pinned down versions in externals configuration. ')
 parser_pending.add_argument('--show-config', action='store_true',
     help='Prints a new externals configuration to stdout that contains the '
-         'HEAD version of the production branch of each project. This assumes '
-         '--production.')
+         'HEAD version of the production branch of each project.')
 parser_pending.add_argument('--no-fetch', action='store_true',
     help='Do not fetch before checking changes. This is '
          'faster, but may be unreliable if the remote branches are out-of-sync.')
 parser_pending.set_defaults(
-    diff=False,
     show_config=False,
-    staging=False,
-    production=False,
-    dev=True,
     no_fetch=False,
     func=gitctl.command.gitctl_pending)
 
@@ -128,6 +110,5 @@ parser_fetch.add_argument('project', nargs='*',
     help='Name of a project to fetch. If omitted all projects in the '
          'externals configuration will be fetched.')
 parser_fetch.set_defaults(func=gitctl.command.gitctl_fetch)
-
 
 __all__ = ['parser']
