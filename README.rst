@@ -8,7 +8,7 @@ Project page: http://github.com/dokai/gitctl
 Change history
 **************
 
-2.0a6 (xxxx-xx-xx)
+2.0a6 (2009-05-27)
 ==================
  
  - Refactored the "gitctl pending" command to support only the comparison
