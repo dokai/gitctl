@@ -21,7 +21,7 @@ parser.add_argument('--config', type=lambda x: [x],
 parser.add_argument('--externals',
     help='Location of the externals configuration file. Defaults to '
          '$PWD/gitexternals.cfg')
-parser.add_argument('--verbose', action='store_true')
+parser.add_argument('--verbose', action='store_true', help='Prints more verbose output about repositories.')
 parser.set_defaults(
     verbose=False,
     externals='gitexternals.cfg',

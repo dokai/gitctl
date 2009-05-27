@@ -121,7 +121,7 @@ easily pulling in and managing the subprojects. This differs from the
 functionality provided by ``git-submodule`` in that both pinned-down and open
 dependencies can be defined. This resembles the way externals are handled in
 Subversion. Also, the individual Git repositories are not aware of the
-externals.
+externals and the externals configuration is kept in a single location.
 
 
 Configuration
