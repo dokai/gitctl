@@ -121,6 +121,7 @@ class TestCommandBranch(CommandTestCase):
         self.args.config = os.path.join(self.container, 'gitctl.cfg')
         self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
         self.args.project = []
+        self.args.from_file = None
     
     def test_branch__list(self):
         self.args.list = True
@@ -185,6 +186,7 @@ class TestCommandUpdate(CommandTestCase):
         self.args.config = os.path.join(self.container, 'gitctl.cfg')
         self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
         self.args.project = []
+        self.args.from_file = None
         
         local_path = join(self.container, 'project.local')
         
@@ -206,6 +208,7 @@ class TestCommandUpdate(CommandTestCase):
         self.args.config = os.path.join(self.container, 'gitctl.cfg')
         self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
         self.args.project = []
+        self.args.from_file = None
 
         local_path = join(self.container, 'project.local')
         local = git.Git(local_path)
@@ -302,6 +305,7 @@ treeish = %s
         self.args.config = os.path.join(self.container, 'gitctl.cfg')
         self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
         self.args.project = []
+        self.args.from_file = None
 
         local_path = join(self.container, 'project.local')
         local = git.Git(local_path)
@@ -381,6 +385,9 @@ treeish = %s
         self.args.config = os.path.join(self.container, 'gitctl.cfg')
         self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
         self.args.project = []
+        self.args.from_file = None
+        self.args.from_file = None
+        self.args.from_file = None
 
         local_path = join(self.container, 'project.local')
         local = git.Git(local_path)
@@ -440,6 +447,7 @@ class TestCommandFetch(CommandTestCase):
         self.args.config = os.path.join(self.container, 'gitctl.cfg')
         self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
         self.args.project = []
+        self.args.from_file = None
 
     def test_fetch(self):
         # Create another local clone, add a file and push to make the remote
@@ -475,6 +483,8 @@ class TestCommandPending(CommandTestCase):
         self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
         self.args.show_config = False
         self.args.diff = False
+        self.args.project = []   # we do not have them
+        self.args.from_file = None
 
     def test_pending__third_party_package(self):
         # Create a new repository to act as our second, third-party upstream.
@@ -589,6 +599,7 @@ class TestCommandStatus(CommandTestCase):
         self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
         self.args.project = []
         self.args.no_fetch = False
+        self.args.from_file = None
 
     def test_status__ok(self):
         gitctl.command.gitctl_status(self.args)
