@@ -8,6 +8,20 @@ Project page: http://github.com/dokai/gitctl
 Change history
 **************
 
+2.0a7 (XXXX-XX-XX)
+==================
+
+ - Added a new --from-file option which tells to read the names of components
+   from a given file. The command then applies to the given components only.
+   [rnd]
+
+ - Added "gitctl path" command which prints path(es) to directories for given 
+   component name(s). [rnd]
+
+ - Added "gitctl sh" command which performs specified shell commands (given with 
+   -c option) in each component's directory. E.g. gitctl sh -c 'git status' will 
+   execute "git status" for each component. [rnd]
+
 2.0a6 (2009-05-27)
 ==================
  
