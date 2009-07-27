@@ -245,6 +245,7 @@ class TestCommandUpdate(CommandTestCase):
         self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
         self.args.project = []
         self.args.verbose = True
+        self.args.from_file = None
 
         # Get the SHA1 checksum for the current head and pin the externals to it.
         sha1_first = self.upstream.rev_parse('HEAD').strip()
@@ -340,6 +341,7 @@ treeish = %s
         self.args.config = os.path.join(self.container, 'gitctl.cfg')
         self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
         self.args.project = []
+        self.args.from_file = None
 
         local_path = join(self.container, 'project.local')
         local = git.Git(local_path)
