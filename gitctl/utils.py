@@ -119,10 +119,10 @@ def generate_externals(projects):
 
     return ext.getvalue().strip()
 
-def filter_projects(projects, selection):
+def filter_projects(projects, selection, default_all=True):
     """Returns"""
     if len(selection) == 0:
-        return projects
+        return default_all and projects or []
     
     existing = set(p['name'] for p in projects)
     if not selection.issubset(existing):
@@ -130,3 +130,13 @@ def filter_projects(projects, selection):
         sys.exit(1)
     else:
         return [p for p in projects if p['name'] in selection]
+
+def selected_projects(args, projects):
+    """Generates projects which are specified in the command line and/or from file.
+    args.from_file and args.project are used and should be present"""
+    # if file is specified, use project names from there too.
+    # but if the file is empty, do not do the command on all projects.
+    projects_file_specified = args.from_file is not None
+    selected_projects = set(getattr(args, 'project', [])) | set(projects_file_specified and args.from_file.read().split() or [])
+    for proj in filter_projects(projects, selected_projects, default_all=not projects_file_specified):
+        yield proj

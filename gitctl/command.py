@@ -92,7 +92,7 @@ def gitctl_fetch(args):
     projects = gitctl.utils.parse_externals(args.externals)
     config = gitctl.utils.parse_config(args.config)
     
-    for proj in gitctl.utils.filter_projects(projects, set(args.project)):
+    for proj in gitctl.utils.selected_projects(args, projects):
         repository = git.Git(gitctl.utils.project_path(proj))
         repository.fetch(config['upstream'])
         LOG.info('%s Fetched', gitctl.utils.pretty(proj['name']))
@@ -102,7 +102,7 @@ def gitctl_branch(args):
     projects = gitctl.utils.parse_externals(args.externals)
     config = gitctl.utils.parse_config(args.config)
     
-    for proj in gitctl.utils.filter_projects(projects, set(args.project)):
+    for proj in gitctl.utils.selected_projects(args, projects):
         repository = git.Repo(gitctl.utils.project_path(proj))
         if not args.checkout and args.list:
             LOG.info('%s %s' % (gitctl.utils.pretty(proj['name']),
@@ -130,8 +130,8 @@ def gitctl_update(args):
     """
     config = gitctl.utils.parse_config(args.config)
     projects = gitctl.utils.parse_externals(args.externals)
-    
-    for proj in gitctl.utils.filter_projects(projects, set(args.project)):
+
+    for proj in gitctl.utils.selected_projects(args, projects):
         path = gitctl.utils.project_path(proj)
         if os.path.exists(path):
             repository = git.Repo(path)
@@ -228,7 +228,7 @@ def gitctl_path(args):
     config = gitctl.utils.parse_config(args.config)
     projects = gitctl.utils.parse_externals(args.externals)
 
-    for proj in gitctl.utils.filter_projects(projects, set(args.project)):
+    for proj in gitctl.utils.selected_projects(args, projects):
         print gitctl.utils.project_path(proj, relative=args.relative)
 
 def gitctl_status(args):
@@ -243,7 +243,7 @@ def gitctl_status(args):
         if args.limit > 0:
             commit_limit = args.limit
 
-    for proj in gitctl.utils.filter_projects(projects, set(args.project)):
+    for proj in gitctl.utils.selected_projects(args, projects):
         repository = git.Repo(gitctl.utils.project_path(proj))
         if not args.no_fetch:
             # Fetch upstream
@@ -272,11 +272,12 @@ def gitctl_pending(args):
     """Checks for pending changes between two consecutive states in our
     workflow.
     """
-    projects = gitctl.utils.parse_externals(args.externals)
     config = gitctl.utils.parse_config(args.config)
+    projects = gitctl.utils.parse_externals(args.externals)
 
-    for proj in projects:
-        repository = git.Repo(gitctl.utils.project_path(proj))
+    for proj in gitctl.utils.selected_projects(args, projects):
+        project_path = gitctl.utils.project_path(proj)
+        repository = git.Repo(project_path)
         
         local_branches = set(repository.git.branch().split())
         remote_branches = set(repository.git.branch('-r').split())

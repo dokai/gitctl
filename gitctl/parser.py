@@ -50,6 +50,9 @@ parser_update = cmd_parsers.add_parser('update',
 parser_update.add_argument('project', nargs='*',
     help='Name of a project to update. If omitted all projects in the '
          'externals configuration will be updated.')
+parser_update.add_argument('--from-file', '-f', 
+    type=argparse.FileType('r'), default=None,
+    help='the file with a list of projects')
 parser_update.set_defaults(
     func=gitctl.command.gitctl_update,
     )
@@ -57,10 +60,13 @@ parser_update.set_defaults(
 # 'gitctl path'
 parser_path = cmd_parsers.add_parser('path',
     help='Shows the path to the project directory.')
-parser_path.add_argument('project', nargs=1,
+parser_path.add_argument('project', nargs="*",
     help='Name of a project to show the path.')
 parser_path.add_argument('--relative', action='store_true',
     help='Whether the path should be relative.')
+parser_path.add_argument('--from-file', '-f', 
+    type=argparse.FileType('r'), default=None,
+    help='the file with a list of projects')
 parser_path.set_defaults(
     func=gitctl.command.gitctl_path,
     )
@@ -75,6 +81,9 @@ parser_status.add_argument('--no-fetch', action='store_true',
 parser_status.add_argument('project', nargs='*',
     help='Name of a project to check. If omitted all projects in the '
          'externals configuration will be checked.')
+parser_status.add_argument('--from-file', '-f', 
+    type=argparse.FileType('r'), default=None,
+    help='the file with a list of projects')
 parser_status.add_argument('--commits', action='store_true', help='Displays a summary of the commits that differ a branch from another')
 parser_status.add_argument('--limit', type=int, help='Limits the number of commits shown in the summary. Ignored with --commits.')
 parser_status.set_defaults(
@@ -95,6 +104,9 @@ parser_branch.add_argument('--checkout', metavar='BRANCH', nargs=1,
 parser_branch.add_argument('project', nargs='*',
     help='Name of a project. If omitted all projects in the '
          'externals configuration will be handled.')
+parser_branch.add_argument('--from-file', '-f', 
+    type=argparse.FileType('r'), default=None,
+    help='the file with a list of projects')
 parser_branch.set_defaults(
     func=gitctl.command.gitctl_branch,
     list=True)
@@ -109,6 +121,9 @@ parser_pending.add_argument('--show-config', action='store_true',
 parser_pending.add_argument('--no-fetch', action='store_true',
     help='Do not fetch before checking changes. This is '
          'faster, but may be unreliable if the remote branches are out-of-sync.')
+parser_pending.add_argument('--from-file', '-f', 
+    type=argparse.FileType('r'), default=None,
+    help='the file with a list of projects')
 parser_pending.set_defaults(
     show_config=False,
     no_fetch=False,
@@ -120,6 +135,9 @@ parser_fetch = cmd_parsers.add_parser('fetch',
 parser_fetch.add_argument('project', nargs='*',
     help='Name of a project to fetch. If omitted all projects in the '
          'externals configuration will be fetched.')
+parser_fetch.add_argument('--from-file', '-f', 
+    type=argparse.FileType('r'), default=None,
+    help='the file with a list of projects')
 parser_fetch.set_defaults(func=gitctl.command.gitctl_fetch)
 
 __all__ = ['parser']
