@@ -228,17 +228,27 @@ def gitctl_path(args):
     config = gitctl.utils.parse_config(args.config)
     projects = gitctl.utils.parse_externals(args.externals)
 
+    paths = []
     for proj in gitctl.utils.selected_projects(args, projects):
-        print gitctl.utils.project_path(proj, relative=args.relative)
+        project_path = gitctl.utils.project_path(proj, relative=args.relative)
+        print project_path
+        paths.append(project_path)
+    return paths
 
 def gitctl_sh(args):
     """Execute shell command in the projects' directories."""
     config = gitctl.utils.parse_config(args.config)
     projects = gitctl.utils.parse_externals(args.externals)
+    result = 0
 
     for proj in gitctl.utils.selected_projects(args, projects):
         project_path = gitctl.utils.project_path(proj)
-        os.system("cd %s; " % project_path + args.command)
+        subresult = os.system("cd %s; " % project_path + args.command)
+        if subresult != 0:
+            LOG.error('%s Error while doing %s', proj["name"], args.command)
+        result += subresult
+
+    return result
 
 def gitctl_status(args):
     """Checks the status of all external projects."""

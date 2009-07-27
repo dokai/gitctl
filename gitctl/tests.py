@@ -636,6 +636,76 @@ class TestCommandStatus(CommandTestCase):
         self.assertEquals(1, len(self.output))
         self.assertEquals('project.local .......................... Branch ``development`` out of sync with upstream', self.output[0])
         
+class TestCommandPath(CommandTestCase):
+    """Tests for the ``path`` command."""
+
+    def setUp(self):
+        super(self.__class__, self).setUp()
+        
+        self.local = self.clone_upstream('project.local')
+        
+        # Mock some command line arguments
+        self.args = mock.Mock()
+        self.args.config = os.path.join(self.container, 'gitctl.cfg')
+        self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
+        self.args.project = []
+        self.args.no_fetch = False
+        self.args.from_file = None
+
+    def test_path__ok(self):
+        result = gitctl.command.gitctl_path(self.args)
+        self.assertEquals(1, len(result))
+        self.failUnless(result[0].endswith("project.local"))
+
+    def test_path__with_file(self):
+        file_name = os.path.join(self.container, 'myproject.set')
+        open(file_name, 'w').write("""project.local""")
+        self.args.from_file = open(file_name, 'r')
+        result = gitctl.command.gitctl_path(self.args)
+        self.assertEquals(1, len(result))
+        self.failUnless(result[0].endswith("project.local"))
+
+    def test_path__with_file_empty(self):
+        file_name = os.path.join(self.container, 'myproject.set')
+        open(file_name, 'w').write("")
+        self.args.from_file = open(file_name, 'r')
+        result = gitctl.command.gitctl_path(self.args)
+        self.assertEquals(0, len(result))
+        
+class TestCommandSh(CommandTestCase):
+    """Tests for the ``sh`` command."""
+
+    def setUp(self):
+        super(self.__class__, self).setUp()
+        
+        self.local = self.clone_upstream('project.local')
+        
+        # Mock some command line arguments
+        self.args = mock.Mock()
+        self.args.config = os.path.join(self.container, 'gitctl.cfg')
+        self.args.externals = os.path.join(self.container, 'gitexternals.cfg')
+        self.args.project = []
+        self.args.no_fetch = False
+        self.args.from_file = None
+
+    def test_sh__ok(self):
+        self.args.command = 'ls'
+        result = gitctl.command.gitctl_sh(self.args)
+        self.assertEquals(result, 0)
+
+    def test_sh__fail(self):
+        self.args.command = 'false'
+        result = gitctl.command.gitctl_sh(self.args)
+        self.assertNotEquals(result, 0)
+        self.failUnless('Error' in self.output[0])
+        self.assertEquals(1, len(self.output))
+
+    def test_sh__fail2(self):
+        self.args.command = 'no-such-cmd-hehe-but-this-output-here-is-not-error-it-is-ok'
+        result = gitctl.command.gitctl_sh(self.args)
+        self.assertNotEquals(result, 0)
+        self.failUnless('Error' in self.output[0])
+        self.assertEquals(1, len(self.output))
 
 class TestUtils(unittest.TestCase):
     """Tests for the utility functions."""
@@ -932,6 +1002,8 @@ class TestWTF(unittest.TestCase):
 def test_suite():
     return unittest.TestSuite([
             #unittest.makeSuite(TestCommandStatus),
+            unittest.makeSuite(TestCommandPath),
+            unittest.makeSuite(TestCommandSh),
             unittest.makeSuite(TestCommandPending),
             unittest.makeSuite(TestCommandFetch),
             unittest.makeSuite(TestCommandUpdate),
