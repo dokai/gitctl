@@ -243,7 +243,7 @@ def gitctl_sh(args):
 
     for proj in gitctl.utils.selected_projects(args, projects):
         project_path = gitctl.utils.project_path(proj)
-        subresult = os.system("cd %s; " % project_path + args.command)
+        subresult = os.system("cd %s; PROJECT='%s'; %s" % (project_path, proj['name'], args.command))
         if subresult != 0:
             LOG.error('%s Error while doing %s', proj["name"], args.command)
         result += subresult
