@@ -15,7 +15,7 @@ Change history
    from a given file. The command then applies to the given components only.
    [rnd]
 
- - Added "gitctl path" command which prints path(es) to directories for given 
+ - Added "gitctl path" command which prints path(s) to directories for given 
    component name(s). [rnd]
 
  - Added "gitctl sh" command which performs specified shell commands (given with 
@@ -256,37 +256,42 @@ subcommand provides additional options. See ``gitctl [subcommand] --help`` for
 details::
 
 
-  usage: gitctl [-h] [--config CONFIG] [--externals EXTERNALS]
-  {status,create,update,branch,fetch,pending} ...
+  usage: gitctl [-h] [-v] [--config CONFIG] [--externals EXTERNALS] [--verbose]
+                {status,create,update,sh,branch,path,fetch,pending} ...
 
   Git workflow utility for managing projects containing multiple git
   repositories.
 
   positional arguments:
-    {status,create,update,branch,fetch,pending}
+    {status,create,update,sh,branch,path,fetch,pending}
                           Commands
       create              Initializes a new local repository and creates a
                           matching upstream repository.
-      update              Updates the configured repositories by either pulling
-                          existing ones or cloning new ones.
+      update              Updates the configured repositories by either
+                          attempting a fast-forward merge on existing project
+                          branches or cloning new projects.
+      path                Shows the path to the project directory.
+      sh                  Executes shell command for specified projects.
       status              Shows the status of each external project and alerts
                           if any are out of sync with the upstream repository.
       branch              Provides information and operates on the branches of
                           the projects.
-      pending             Checks if there are any pending changes between two
-                          consecutive states in the workflow.
+      pending             Checks if there are any pending changes in the
+                          production branches compared to the pinned down
+                          versions in externals configuration.
       fetch               Updates the remote branches on all projects without
                           merging.
 
   optional arguments:
     -h, --help            show this help message and exit
+    -v, --version         show program's version number and exit
     --config CONFIG       Location of the configuration file. If omitted the
                           following locations will be search: $PWD/gitctl.cfg,
                           ~/.gitctl.cfg.
     --externals EXTERNALS
                           Location of the externals configuration file. Defaults
                           to $PWD/gitexternals.cfg
-
+    --verbose             Prints more verbose output about repositories.
 
 
 Installation
@@ -295,6 +300,62 @@ Installation
 Using setuptools::
 
   $ easy_install gitctl
+
+Examples
+********
+
+gitctl path
+===========
+
+Outputs the path(s) of the project directories::
+
+  $ cd /Users/rnd/buildout/
+  $ gitctl path -f refactoring_these_projects 
+  /Users/rnd/buildout/products/Project1
+  /Users/rnd/buildout/products/Project2
+  /Users/rnd/buildout/src/Project3
+
+where the ``refactoring_these_projects`` file contains project names,
+one per line::
+  ProjectI
+  ProjectII
+  ProjectIII
+
+Without providing project names, all project paths will be output.
+
+gitctl sh
+=========
+
+Executes shell command in each project directory (that is, the
+directory with path ``gitctl path`` shows). Some examples (using the
+same file  ``refactoring_these_projects`` as above).
+
+Show branches for each project (``PROJECT`` environment variable holds
+the name of the project)::
+
+  gitctl sh -f refactoring_these_projects -c 'echo $PROJECT; git branch'
+
+Making feature branch::
+
+  gitctl sh -f refactoring_these_projects -c 'git checkout -b my_f_branch'
+
+Mass-check out certain feature branch (first, all projects to development,
+then checkout feature branch only for projects under refacture)::
+
+  gitctl sh -c 'git checkout development'
+  gitctl sh -f refactoring_these_projects -c 'git checkout my_f_branch'
+
+
+Get a list of projects which have production different from
+development (N.B. checked via commit, not diff, so, some listed
+project may really be textually identical)::
+
+  gitctl sh -f refactoring_these_projects -c '[ `git rev-parse development` != `git rev-parse origin/production` ] && echo $PROJECT' 2> /dev/null
+
+Make some operations on selected projects::
+
+  gitctl sh -f refactoring_these_projects -c 'git commit -m "Added newfeature"'
+
 
 Dependencies
 ************
