@@ -558,7 +558,7 @@ treeish = %s
         self.local.push()
         
         gitctl.command.gitctl_pending(self.args)
-        self.failUnless(self.output[0].startswith('project.local .......................... Branch ``production`` is 1 commit(s) ahead of the pinned down version at revision'))
+        self.failUnless(self.output[0].startswith('project.local .......................... Branch ``production`` is 1 commit(s) ahead at revision '))
 
     def test_pending__show_config(self):
         self.args.production = True
