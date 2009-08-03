@@ -8,19 +8,19 @@ Project page: http://github.com/dokai/gitctl
 Change history
 **************
 
-2.0a7 (XXXX-XX-XX)
+2.0a7 (2009-08-03)
 ==================
 
  - Added a new --from-file option which tells to read the names of components
    from a given file. The command then applies to the given components only.
    [rnd]
 
- - Added "gitctl path" command which prints path(s) to directories for given 
+ - Added "gitctl path" command which prints path(s) to directories for given
    component name(s). [rnd]
 
- - Added "gitctl sh" command which performs specified shell commands (given with 
-   -c option) in each component's directory. E.g. gitctl sh -c 'git status' will 
-   execute "git status" for each component. [rnd]
+ - Added "gitctl sh" command which performs specified shell commands (given
+   with -c option) in each component's directory. E.g. gitctl sh -c 'git
+   status' will execute "git status" for each component. [rnd]
 
 2.0a6 (2009-05-27)
 ==================
@@ -317,9 +317,13 @@ Outputs the path(s) of the project directories::
 
 where the ``refactoring_these_projects`` file contains project names,
 one per line::
+
   ProjectI
   ProjectII
   ProjectIII
+
+These project names map to the sections in the ``gitexternals.cfg``
+configuration.
 
 Without providing project names, all project paths will be output.
 
@@ -360,7 +364,7 @@ Make some operations on selected projects::
 Dependencies
 ************
 
- * Git_ >= 1.5.5
+ * Git_ >= 1.6
  * argparse_
  * GitPython_ >= 0.1.5
 
