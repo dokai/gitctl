@@ -376,3 +376,4 @@ Contributors
 ************
 
  - Kai Lautaportti, Author [dokai]
+ - Roman Susi, [rnd]
