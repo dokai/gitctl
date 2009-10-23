@@ -28,7 +28,7 @@ def branch_structure(repository):
     for line in repository.git.config('--get-regexp', '^branch.', with_exceptions=False).splitlines():
         remote_match = RE_CONFIG_REMOTE_BRANCH.search(line.strip())
         
-        if remote_match is not None:
+        if remote_match is not None and remote_match.group(2) in remote_urls:
             branches.setdefault(remote_match.group(1), {}).update(
                 remote=remote_match.group(2),
                 remote_url=remote_urls[remote_match.group(2)])
