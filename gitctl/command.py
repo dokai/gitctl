@@ -5,10 +5,21 @@ import sys
 import git
 import logging
 
+import gitctl.notification
 import gitctl.utils
 import gitctl.wtf
 
 LOG = logging.getLogger('gitctl')
+LOG_SUMMARY = logging.getLogger('gitctl.summary')
+
+UPDATE_SUMMARY_TMPL = """Update finished
+
+Processed %(total)s project(s) of which 
+ - %(updated)s were updated
+ - %(cloned)s were cloned (new project)
+ - %(dirty)s had dirty checkouts
+ - %(failed)s failed to update cleanly
+"""
 
 def gitctl_create(args):
     """Handles the 'gitctl create' command"""
@@ -131,7 +142,10 @@ def gitctl_update(args):
     config = gitctl.utils.parse_config(args.config)
     projects = gitctl.utils.parse_externals(args.externals)
 
+    summary = {'total' : 0}
+
     for proj in gitctl.utils.selected_projects(args, projects):
+        summary['total'] += 1
         path = gitctl.utils.project_path(proj)
         if os.path.exists(path):
             repository = git.Repo(path)
@@ -142,6 +156,7 @@ def gitctl_update(args):
             
             if repository.is_dirty:
                 LOG.info('%s Dirty working directory. Please commit or stash and try again.', gitctl.utils.pretty(proj['name']))
+                summary.setdefault('dirty', set()).add(proj['name'])
                 continue
 
             ok = True
@@ -185,9 +200,11 @@ def gitctl_update(args):
                                 # bail out for now. We could attempt a normal 'git pull' operation but that
                                 # might leave multiple branch in an inconsistent state at the same time.
                                 LOG.warning('%s Fast forward merge not possible for branch ``%s``. Try syncing with upstream manually (pull, push or merge).', gitctl.utils.pretty(proj['name']), local)
+                                summary.setdefault('failed', set()).add(proj['name'])
                             else:
                                 # Some other kind of error.
                                 LOG.critical('%s Update failure: %s', gitctl.utils.pretty(proj['name']), stderr)
+                                summary.setdefault('failed', set()).add(proj['name'])
                         else:
                             updated = True
 
@@ -202,8 +219,10 @@ def gitctl_update(args):
                             LOG.info('%s OK', gitctl.utils.pretty(proj['name']))
                     else:
                         LOG.info('%s Checked out revision ``%s``', gitctl.utils.pretty(proj['name']), treeish)
+                        summary.setdefault('updated', set()).add(proj['name'])
                 elif updated:
                     LOG.info('%s Updated', gitctl.utils.pretty(proj['name']))
+                    summary.setdefault('updated', set()).add(proj['name'])
                 elif args.verbose:
                     LOG.info('%s OK', gitctl.utils.pretty(proj['name']))
 
@@ -222,6 +241,15 @@ def gitctl_update(args):
             # Check out the given treeish
             repository.checkout(proj['treeish'])
             LOG.info('%s Cloned and checked out ``%s``', gitctl.utils.pretty(proj['name']), proj['treeish'])
+            summary.setdefault('cloned', set()).add(proj['name'])
+
+    LOG_SUMMARY.info(UPDATE_SUMMARY_TMPL % {
+        'total' : summary['total'],
+        'updated' : len(summary.get('updated', [])),
+        'cloned' : len(summary.get('cloned', [])),
+        'failed' : len(summary.get('failed', [])),
+        'dirty' : len(summary.get('dirty', [])),
+     })
 
 def gitctl_path(args):
     """Give the path to project directory."""

@@ -1,6 +1,7 @@
 import sys
 import logging
 import gitctl.parser
+import gitctl.notification
 
 class LevelFilter(logging.Filter):
     def __init__(self, level):
@@ -21,6 +22,14 @@ def main():
     logging.getLogger('gitctl').setLevel(logging.INFO)
     # Normal message go to stdout
     logging.getLogger('gitctl').addHandler(make_handler(sys.stdout, '%(message)s', logging.INFO))
+    if gitctl.notification.HAVE_GROWL:
+        class GrowlStream(object):
+            def write(self, bytes):
+                gitctl.notification.notify('update', 'gitctl', bytes)
+            def flush(self):
+                pass
+        logging.getLogger('gitctl.summary').addHandler(make_handler(GrowlStream(), '%(message)s', logging.INFO))
+        logging.getLogger('gitctl.summary').propagate = False
     # Error messages to stderr
     logging.getLogger('gitctl').addHandler(make_handler(sys.stderr, '%(levelname)s %(message)s', logging.WARN))
     logging.getLogger('gitctl').addHandler(make_handler(sys.stderr, '%(levelname)s %(message)s', logging.CRITICAL))
