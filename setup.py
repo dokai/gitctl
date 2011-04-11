@@ -5,7 +5,7 @@ import os.path
 def read(*rnames):
     return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
 
-version = '2.0a7'
+version = '2.0a8'
 
 setup(name='gitctl',
       version=version,
@@ -33,7 +33,7 @@ setup(name='gitctl',
       install_requires=[
         'setuptools',
         'argparse',
-        'GitPython>=0.1.5',
+        'GitPython==0.1.7',
         'mock',
         ],
       test_suite='gitctl.tests.test_suite',

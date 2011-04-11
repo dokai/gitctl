@@ -8,6 +8,15 @@ Project page: http://github.com/dokai/gitctl
 Change history
 **************
 
+2.0a8 (2010-04-11)
+==================
+
+ - Bound GitPython dependency at version 0.1.7. gitctl is not compatible with
+   the newer versions. [dokai]
+
+ - Added experimental Growl support. You need to have the Growl python
+   bindings installed for it to work.
+
 2.0a7 (2009-08-03)
 ==================
 
@@ -24,14 +33,14 @@ Change history
 
 2.0a6 (2009-05-27)
 ==================
- 
+
  - Refactored the "gitctl pending" command to support only the comparison
    between the pinned down revisions in the externals configuration and the
    HEADs of the production branches. In practice this means the the former
    --production switch is the default behavior and the --production, --staging
    and --dev options have been removed. The refactored "gitctl status"
    replaces the former functionality. [dokai]
- 
+
  - Refactored the "gitctl status" command to give more elaborate information
    about the status of the repository. [dokai]
 
@@ -67,14 +76,14 @@ Change history
  - Fixed 'gitctl pending --production' which compared the wrong trees. When
    using pinned down revisions (HEADless working directories) we need to
    always compare against the remote branches. [dokai]
-   
+
  - Fixed a bug in 'gitctl pending' if not all branches were available. [dokai]
 
  - Added the '-v' switch to show the version of the gitctl. [dokai]
 
 2.0a3 (2008-09-21)
 ==================
-  
+
  - Added support for specifying the initial commit message by using
    'gitctl create --message'. [dokai]
 
@@ -180,7 +189,7 @@ gitctl.cfg
 
     Name of the production branch. The above ``branches`` listing will be made
     to implicitly contain this branch.
-    
+
 ``commit-email``
 
     Email address where commit emails will be sent. Only used when creating
@@ -310,7 +319,7 @@ gitctl path
 Outputs the path(s) of the project directories::
 
   $ cd /Users/rnd/buildout/
-  $ gitctl path -f refactoring_these_projects 
+  $ gitctl path -f refactoring_these_projects
   /Users/rnd/buildout/products/Project1
   /Users/rnd/buildout/products/Project2
   /Users/rnd/buildout/src/Project3
@@ -366,7 +375,7 @@ Dependencies
 
  * Git_ >= 1.6
  * argparse_
- * GitPython_ >= 0.1.5
+ * GitPython_ == 0.1.7
 
 .. _Git: http://git-scm.com/
 .. _argparse: http://argparse.python-hosting.com/
