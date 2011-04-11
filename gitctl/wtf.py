@@ -55,7 +55,7 @@ def branch_structure(repository):
                 if name == 'HEAD':
                     continue
                 branch = name
-                if name in branches and branches[name]['remote'] == remote:
+                if name in branches and branches[name].get('remote') == remote:
                     pass
                 else:
                     name = '%s/%s' % (remote, branch)
