@@ -33,7 +33,7 @@ setup(name='gitctl',
       install_requires=[
         'setuptools',
         'argparse',
-        'GitPython==0.1.7',
+        'GitPython==3.1.34',
         'mock',
         ],
       test_suite='gitctl.tests.test_suite',
